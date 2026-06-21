@@ -1,4 +1,6 @@
 let balance = localStorage.getItem('simpleCasinoBal') ? parseFloat(localStorage.getItem('simpleCasinoBal')) : 1000.00;
+let bankruptcyTimer = null;
+let bankruptcyTimeLeft = 0;
 
 // AUDIO ENGINE
 let audioCtx;
@@ -53,13 +55,47 @@ function drawConfetti() {
     requestAnimationFrame(drawConfetti);
 }
 
-// GLOBALS
+// GLOBALS & BANKRUPTCY LOGIC
 function updateBalance(amount) {
-    balance += amount; localStorage.setItem('simpleCasinoBal', balance.toFixed(2));
-    document.getElementById('balanceDisplay').innerText = balance.toFixed(2);
+    balance += amount; 
+    if (balance < 0) balance = 0;
+    localStorage.setItem('simpleCasinoBal', balance.toFixed(2));
+    
+    updateBalanceDisplay();
+    
     const el = document.querySelector('.balance-container');
     el.style.color = amount > 0 ? 'var(--win-color)' : (amount < 0 ? 'var(--lose-color)' : 'inherit');
     setTimeout(() => el.style.color = 'inherit', 400);
+
+    checkBankruptcy();
+}
+
+function updateBalanceDisplay() {
+    let txt = balance.toFixed(2);
+    if (bankruptcyTimeLeft > 0) txt += ` <span style="color:#facc15; font-size:0.8em;">(free $100 in ${bankruptcyTimeLeft}s)</span>`;
+    document.getElementById('balanceDisplay').innerHTML = txt;
+}
+
+function checkBankruptcy() {
+    if (balance <= 0 && !bankruptcyTimer) {
+        bankruptcyTimeLeft = 60;
+        updateBalanceDisplay();
+        bankruptcyTimer = setInterval(() => {
+            bankruptcyTimeLeft--;
+            updateBalanceDisplay();
+            if (bankruptcyTimeLeft <= 0) {
+                clearInterval(bankruptcyTimer);
+                bankruptcyTimer = null;
+                updateBalance(100);
+                sfx.win();
+            }
+        }, 1000);
+    } else if (balance > 0 && bankruptcyTimer) {
+        clearInterval(bankruptcyTimer);
+        bankruptcyTimer = null;
+        bankruptcyTimeLeft = 0;
+        updateBalanceDisplay();
+    }
 }
 updateBalance(0);
 
@@ -499,10 +535,9 @@ function unoBotPlay() {
     }
 }
 
-// 8. CONNECT 4
+// 8. CONNECT 4 (Minimax Smart AI)
 let c4GridState = [], c4Rows = 6, c4Cols = 7, c4Target = 4, c4BetAmt = 0, isC4Active = false;
 
-// Pre-build empty board so it is visible immediately on load
 function buildC4Board() {
     let boardHTML = '';
     for(let c=0; c<c4Cols; c++) {
@@ -512,7 +547,7 @@ function buildC4Board() {
     }
     document.getElementById('c4BoardUI').innerHTML = boardHTML;
 }
-buildC4Board(); // render immediately
+buildC4Board();
 
 function startC4() {
     if(isC4Active) return;
@@ -520,15 +555,10 @@ function startC4() {
     c4BetAmt = getBet('c4Bet'); if(!c4BetAmt) return;
     updateBalance(-c4BetAmt);
     
-    document.getElementById('btnC4Start').disabled = true;
-    document.getElementById('c4Target').disabled = true;
-    document.getElementById('c4Bet').disabled = true;
-    
-    document.getElementById('c4Status').innerHTML = 'your turn (red).';
-    document.getElementById('c4Status').className = 'game-status';
+    document.getElementById('btnC4Start').disabled = true; document.getElementById('c4Target').disabled = true; document.getElementById('c4Bet').disabled = true;
+    document.getElementById('c4Status').innerHTML = 'your turn (red).'; document.getElementById('c4Status').className = 'game-status';
     isC4Active = true;
 
-    // Reset logical array and visual board
     c4GridState = Array.from({length: c4Rows}, () => Array(c4Cols).fill(0));
     buildC4Board();
 }
@@ -541,96 +571,54 @@ function c4DropToken(r, c, playerNum, callback) {
     cell.appendChild(token);
     
     sfx.tick(1);
-    
     requestAnimationFrame(() => { requestAnimationFrame(() => { token.style.transform = 'translateY(0px)'; }); });
     setTimeout(() => { sfx.thud(); if(callback) callback(); }, 600);
 }
 
 function c4PlayerMove(c) {
     if(!isC4Active) return;
-    let r = getLowestEmptyRow(c); if(r === -1) return;
+    let r = getLowestEmptyRowCustom(c4GridState, c); if(r === -1) return;
     
     isC4Active = false; 
     c4GridState[r][c] = 1;
     
     c4DropToken(r, c, 1, () => {
-        if(checkC4Win(1)) {
+        if(checkWinCustom(c4GridState, 1)) {
             let mult = c4Target === 4 ? 2 : (c4Target === 5 ? 3 : 5);
             updateBalance(c4BetAmt * mult); sfx.win();
             status('c4Status', `you connect ${c4Target}! won $${(c4BetAmt * mult).toFixed(2)} (${mult}x)`, true);
             endC4();
-        } else if (isC4Draw()) {
-            updateBalance(c4BetAmt); sfx.tick();
-            status('c4Status', 'draw! bet returned.', false); endC4();
-        } else {
-            document.getElementById('c4Status').innerHTML = 'bot is thinking...';
-            setTimeout(c4BotMove, 500);
-        }
-    });
-}
-
-function c4BotMove() {
-    let bestCol = -1;
-    
-    // 1. Can bot win?
-    for(let c=0; c<c4Cols; c++) {
-        let r = getLowestEmptyRow(c); if(r === -1) continue;
-        c4GridState[r][c] = 2; if(checkC4Win(2)) { bestCol = c; } c4GridState[r][c] = 0;
-        if(bestCol !== -1) break;
-    }
-    
-    // 2. Can player win? (Block)
-    if(bestCol === -1) {
-        for(let c=0; c<c4Cols; c++) {
-            let r = getLowestEmptyRow(c); if(r === -1) continue;
-            c4GridState[r][c] = 1; if(checkC4Win(1)) { bestCol = c; } c4GridState[r][c] = 0;
-            if(bestCol !== -1) break;
-        }
-    }
-    
-    // 3. Random fallback
-    if(bestCol === -1) {
-        let validCols = [];
-        for(let c=0; c<c4Cols; c++) { if(getLowestEmptyRow(c) !== -1) validCols.push(c); }
-        if(validCols.length > 0) bestCol = validCols[Math.floor(Math.random() * validCols.length)];
-    }
-    
-    if(bestCol === -1) return;
-    
-    let r = getLowestEmptyRow(bestCol);
-    c4GridState[r][bestCol] = 2;
-    
-    c4DropToken(r, bestCol, 2, () => {
-        if(checkC4Win(2)) {
-            sfx.lose(); status('c4Status', 'bot connected! you lost.', false); endC4();
-        } else if (isC4Draw()) {
+        } else if (getValidCols(c4GridState).length === 0) {
             updateBalance(c4BetAmt); sfx.tick(); status('c4Status', 'draw! bet returned.', false); endC4();
         } else {
-            document.getElementById('c4Status').innerHTML = 'your turn (red).'; isC4Active = true;
+            document.getElementById('c4Status').innerHTML = 'bot is thinking...';
+            // Slight timeout so UI updates before heavy calculation
+            setTimeout(c4BotMove, 50);
         }
     });
 }
 
-function getLowestEmptyRow(c) {
-    for(let r = c4Rows - 1; r >= 0; r--) { if(c4GridState[r][c] === 0) return r; }
+function getValidCols(board) {
+    let cols = [];
+    for(let c=0; c<c4Cols; c++) { if(board[0][c] === 0) cols.push(c); }
+    return cols;
+}
+
+function getLowestEmptyRowCustom(board, c) {
+    for(let r = c4Rows - 1; r >= 0; r--) { if(board[r][c] === 0) return r; }
     return -1;
 }
 
-function isC4Draw() {
-    for(let c=0; c<c4Cols; c++) { if(c4GridState[0][c] === 0) return false; }
-    return true;
-}
-
-function checkC4Win(player) {
+function checkWinCustom(board, player) {
     const dirs = [[0,1], [1,0], [1,1], [1,-1]];
     for(let r=0; r<c4Rows; r++) {
         for(let c=0; c<c4Cols; c++) {
-            if(c4GridState[r][c] !== player) continue;
+            if(board[r][c] !== player) continue;
             for(let [dr, dc] of dirs) {
                 let count = 1;
                 for(let i=1; i<c4Target; i++) {
                     let nr = r + dr*i, nc = c + dc*i;
-                    if(nr<0 || nr>=c4Rows || nc<0 || nc>=c4Cols || c4GridState[nr][nc] !== player) break;
+                    if(nr<0 || nr>=c4Rows || nc<0 || nc>=c4Cols || board[nr][nc] !== player) break;
                     count++;
                 }
                 if(count >= c4Target) return true;
@@ -640,9 +628,126 @@ function checkC4Win(player) {
     return false;
 }
 
+// Evaluate heuristics for the Minimax algorithm
+function evaluateWindow(window, player) {
+    let score = 0; let opp = player === 1 ? 2 : 1;
+    let countP = 0, countO = 0, countE = 0;
+    
+    for(let piece of window) {
+        if(piece === player) countP++;
+        else if(piece === opp) countO++;
+        else countE++;
+    }
+
+    if (countP === c4Target) score += 100000;
+    else if (countP === c4Target - 1 && countE === 1) score += 100;
+    else if (countP === c4Target - 2 && countE === 2) score += 10;
+    if (countO === c4Target - 1 && countE === 1) score -= 80; // block opponent
+
+    return score;
+}
+
+function evaluateBoard(board, player) {
+    let score = 0;
+    for (let r=0; r<c4Rows; r++) { // horizontal
+        for(let c=0; c<=c4Cols - c4Target; c++) {
+            let window = []; for(let i=0; i<c4Target; i++) window.push(board[r][c+i]);
+            score += evaluateWindow(window, player);
+        }
+    }
+    for (let c=0; c<c4Cols; c++) { // vertical
+        for(let r=0; r<=c4Rows - c4Target; r++) {
+            let window = []; for(let i=0; i<c4Target; i++) window.push(board[r+i][c]);
+            score += evaluateWindow(window, player);
+        }
+    }
+    for (let r=0; r<=c4Rows - c4Target; r++) { // diag up
+        for(let c=0; c<=c4Cols - c4Target; c++) {
+            let window = []; for(let i=0; i<c4Target; i++) window.push(board[r+i][c+i]);
+            score += evaluateWindow(window, player);
+        }
+    }
+    for (let r=0; r<=c4Rows - c4Target; r++) { // diag down
+        for(let c=c4Target-1; c<c4Cols; c++) {
+            let window = []; for(let i=0; i<c4Target; i++) window.push(board[r+i][c-i]);
+            score += evaluateWindow(window, player);
+        }
+    }
+    return score;
+}
+
+// Alpha-Beta Minimax
+function minimax(board, depth, alpha, beta, isMaximizing) {
+    let isWinPlayer = checkWinCustom(board, 1);
+    let isWinBot = checkWinCustom(board, 2);
+    let validCols = getValidCols(board);
+    
+    if (isWinBot) return 1000000 + depth;
+    if (isWinPlayer) return -1000000 - depth;
+    if (validCols.length === 0) return 0;
+    if (depth === 0) return evaluateBoard(board, 2);
+
+    if (isMaximizing) {
+        let maxEval = -Infinity;
+        for (let c of validCols) {
+            let r = getLowestEmptyRowCustom(board, c);
+            board[r][c] = 2;
+            let ev = minimax(board, depth - 1, alpha, beta, false);
+            board[r][c] = 0;
+            maxEval = Math.max(maxEval, ev);
+            alpha = Math.max(alpha, ev);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (let c of validCols) {
+            let r = getLowestEmptyRowCustom(board, c);
+            board[r][c] = 1;
+            let ev = minimax(board, depth - 1, alpha, beta, true);
+            board[r][c] = 0;
+            minEval = Math.min(minEval, ev);
+            beta = Math.min(beta, ev);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
+}
+
+function c4BotMove() {
+    let validCols = getValidCols(c4GridState);
+    if(validCols.length === 0) return;
+
+    // Randomize initial column check to prevent repeating identical plays on ties
+    validCols.sort(() => Math.random() - 0.5);
+
+    let bestScore = -Infinity, bestCol = validCols[0];
+    
+    // Depth 4 is highly intelligent without causing major browser lag
+    for (let c of validCols) {
+        let r = getLowestEmptyRowCustom(c4GridState, c);
+        c4GridState[r][c] = 2;
+        let score = minimax(c4GridState, 4, -Infinity, Infinity, false);
+        c4GridState[r][c] = 0;
+        
+        if (score > bestScore) { bestScore = score; bestCol = c; }
+    }
+    
+    let r = getLowestEmptyRowCustom(c4GridState, bestCol);
+    c4GridState[r][bestCol] = 2;
+    
+    c4DropToken(r, bestCol, 2, () => {
+        if(checkWinCustom(c4GridState, 2)) {
+            sfx.lose(); status('c4Status', 'bot connected! you lost.', false); endC4();
+        } else if (getValidCols(c4GridState).length === 0) {
+            updateBalance(c4BetAmt); sfx.tick(); status('c4Status', 'draw! bet returned.', false); endC4();
+        } else {
+            document.getElementById('c4Status').innerHTML = 'your turn (red).'; isC4Active = true;
+        }
+    });
+}
+
 function endC4() {
     isC4Active = false;
-    document.getElementById('btnC4Start').disabled = false;
-    document.getElementById('c4Target').disabled = false;
-    document.getElementById('c4Bet').disabled = false;
+    document.getElementById('btnC4Start').disabled = false; document.getElementById('c4Target').disabled = false; document.getElementById('c4Bet').disabled = false;
 }
