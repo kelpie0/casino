@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>casino</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
 <body>
-
     <canvas id="confettiCanvas"></canvas>
 
     <header>
@@ -64,14 +63,8 @@
 
     <div id="blackjack" class="game-view">
         <h1>blackjack</h1>
-        <div>
-            <p>dealer hand (<span id="dlrScore">0</span>)</p>
-            <div class="cards-area" id="dlrCards"></div>
-        </div>
-        <div>
-            <p>your hand (<span id="plrScore">0</span>)</p>
-            <div class="cards-area" id="plrCards"></div>
-        </div>
+        <div><p>dealer (<span id="dlrScore">0</span>)</p><div class="cards-area" id="dlrCards"></div></div>
+        <div><p>you (<span id="plrScore">0</span>)</p><div class="cards-area" id="plrCards"></div></div>
         <div class="bet-controls" id="bjBetPhase">
             <span>bet:</span>
             <input type="number" id="bjBet" class="bet-input" value="10" min="1">
@@ -103,15 +96,9 @@
         <h1>roulette</h1>
         <div class="roulette-result" id="rouletteResult">--</div>
         <div class="roulette-options">
-            <label class="r-label r-red">
-                <input type="radio" name="r_bet" value="red" checked> red (2x)
-            </label>
-            <label class="r-label r-green">
-                <input type="radio" name="r_bet" value="green"> zero (36x)
-            </label>
-            <label class="r-label r-black">
-                <input type="radio" name="r_bet" value="black"> black (2x)
-            </label>
+            <label class="r-label r-red"><input type="radio" name="r_bet" value="red" checked> red (2x)</label>
+            <label class="r-label r-green"><input type="radio" name="r_bet" value="green"> zero (36x)</label>
+            <label class="r-label r-black"><input type="radio" name="r_bet" value="black"> black (2x)</label>
         </div>
         <div class="bet-controls">
             <span>bet:</span>
@@ -124,18 +111,13 @@
     <div id="derby" class="game-view">
         <h1>horse race</h1>
         <p style="color:#888; margin-bottom: 20px;">1st place: 5x | 2nd place: 2x</p>
-        
         <div class="custom-dropdown-container">
             <div class="custom-select" id="horseSelect" onclick="toggleHorseDropdown(event)">
                 <span id="selectedHorseText">select a horse...</span>
             </div>
             <div class="custom-options" id="horseOptions"></div>
         </div>
-
-        <div class="track" id="raceTrack">
-            <div style="color: #444; padding: 40px;">pick a horse to generate race</div>
-        </div>
-
+        <div class="track" id="raceTrack"><div style="color:#444; padding:40px;">pick a horse to generate race</div></div>
         <div class="bet-controls">
             <span>bet:</span>
             <input type="number" id="derbyBet" class="bet-input" value="10" min="1">
@@ -146,7 +128,6 @@
 
     <div id="uno" class="game-view">
         <h1>uno</h1>
-        
         <div id="unoSetup">
             <p style="color:#888; margin-bottom: 30px;">beat the bots. payout scales with bot count.</p>
             <div class="bet-controls">
@@ -157,25 +138,18 @@
                 <button class="primary-btn" onclick="startUno()">start uno</button>
             </div>
         </div>
-
         <div id="unoGame" style="display: none;">
             <div class="uno-header">
                 <div id="unoBotsStatus" class="uno-bots-status"></div>
                 <div id="unoTurnIndicator" class="uno-turn-indicator">your turn</div>
             </div>
-
             <div class="uno-center">
-                <div class="uno-deck" onclick="unoDrawCard()">
-                    <span>uno</span>
-                    <div style="font-size: 12px; font-weight: normal; margin-top: 10px;">draw</div>
-                </div>
-                <div class="uno-card" id="unoDiscardCard"></div>
+                <div class="uno-deck" onclick="unoDrawCard()"><span>uno</span><div style="font-size:12px; margin-top:10px; font-weight:normal;">click to draw</div></div>
+                <div id="unoDiscardCard"></div>
                 <div class="uno-color-indicator" id="unoCurrentColor">color: red</div>
             </div>
-
-            <p style="text-align: left; margin: 20px 0 10px 0; font-weight: bold;">your hand:</p>
+            <p style="text-align: left; margin: 20px 0 10px 0; font-weight: bold;">your hand (auto-sorted):</p>
             <div class="uno-hand" id="unoPlayerHand"></div>
-
             <div class="uno-wild-picker" id="unoWildPicker" style="display: none;">
                 <p>pick a color:</p>
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
@@ -188,6 +162,5 @@
         </div>
         <div id="unoStatus" class="game-status"></div>
     </div>
-
 </body>
 </html>
