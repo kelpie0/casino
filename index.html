@@ -143,7 +143,9 @@
                 <div id="unoBotsStatus" class="uno-bots-status"></div>
                 <div id="unoTurnIndicator" class="uno-turn-indicator">your turn</div>
             </div>
-            <div class="uno-center">
+            <div class="uno-center" style="position: relative;">
+                <div id="unoBotAnimContainer" style="position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 100;"></div>
+                
                 <div class="uno-deck" onclick="unoDrawCard()"><span>uno</span><div style="font-size:12px; margin-top:10px; font-weight:normal;">click to draw</div></div>
                 <div id="unoDiscardCard"></div>
                 <div class="uno-color-indicator" id="unoCurrentColor">color: red</div>

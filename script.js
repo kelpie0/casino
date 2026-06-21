@@ -279,8 +279,8 @@ let selHorseId = null, isRacing = false;
 const hOpts = document.getElementById('horseOptions');
 horses.forEach((h, i) => {
     let o = document.createElement('div'); o.className = 'custom-option';
-    o.innerHTML = `<span class="horse-preview" style="text-shadow: 0 0 10px ${h.hex}">🐴</span> ${h.name}`;
     o.onclick = () => { selHorseId=i; document.getElementById('selectedHorseText').innerHTML=`<span style="text-shadow: 0 0 10px ${h.hex}">🐴</span> ${h.name}`; document.getElementById('horseOptions').classList.remove('show'); };
+    o.innerHTML = `<span class="horse-preview" style="text-shadow: 0 0 10px ${h.hex}">🐴</span> ${h.name}`;
     hOpts.appendChild(o);
 });
 function toggleHorseDropdown(e) { e.stopPropagation(); if(!isRacing) document.getElementById('horseOptions').classList.toggle('show'); }
@@ -322,9 +322,12 @@ function startDerby() {
     rAnim = requestAnimationFrame(runR);
 }
 
-// 7. UNO (Massive QoL Overhaul)
-let unoDeck=[], unoPlayers=[], unoDiscard=null, unoColor='', unoDir=1, unoCurr=0, unoBetAmt=0;
+// 7. UNO (With Bot Names and Play Animations)
+let unoDeck=[], unoPlayers=[], unoDiscard=null, unoColor='', unoDir=1, unoCurr=0, unoBetAmt=0, activeBotNames=[];
 const uCols=['red','blue','green','yellow'], uVals=['0','1','2','3','4','5','6','7','8','9','skip','rev','+2'];
+
+// Pool of 10 generic casual bot names
+const botNamesPool = ["ace", "lucky", "bluff", "dealer", "joker", "chips", "shadow", "rusty", "shark", "rookie"];
 
 function buildUnoDeck() {
     let d = [];
@@ -347,25 +350,70 @@ function renderUnoCard(c, isValid=true, onClick='') {
     return `<div class="${cls}" data-val="${display}" onclick="${onClick}"><span>${display}</span></div>`;
 }
 
+// Animation system for the bot moves
+function animateBotCardPlay(card) {
+    const container = document.getElementById('unoBotAnimContainer');
+    container.innerHTML = ''; // Clear previous animations
+    
+    // Create element with standard uno card styles
+    let animCard = document.createElement('div');
+    let display = card.v === 'skip' ? '⊘' : (card.v === 'rev' ? '↺' : card.v);
+    animCard.className = `uno-card ${card.c}`;
+    animCard.setAttribute('data-val', display);
+    animCard.innerHTML = `<span>${display}</span>`;
+    
+    // Base inline styles for floating animation entry
+    animCard.style.position = 'absolute';
+    animCard.style.transform = 'translate(-50%, 40px) scale(0.4)';
+    animCard.style.opacity = '0';
+    animCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    
+    container.appendChild(animCard);
+    
+    // Force DOM layout execution, then animate into place float up
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            animCard.style.transform = 'translate(-50%, 0px) scale(0.9)';
+            animCard.style.opacity = '1';
+        });
+    });
+
+    // Fade out and disappear shortly after
+    setTimeout(() => {
+        animCard.style.transform = 'translate(-50%, -40px) scale(0.6)';
+        animCard.style.opacity = '0';
+        setTimeout(() => { container.innerHTML = ''; }, 500);
+    }, 1200);
+}
+
 function startUno() {
     let bots = parseInt(document.getElementById('unoBots').value);
     if(bots < 1 || bots > 10) return alert('choose 1-10 bots.');
     unoBetAmt = getBet('unoBet'); if(!unoBetAmt) return;
     updateBalance(-unoBetAmt);
-    document.getElementById('unoSetup').style.display = 'none'; document.getElementById('unoGame').style.display = 'block';
     
-    unoDeck = buildUnoDeck(); unoPlayers = Array.from({length: bots + 1}, () => []); 
+    // Pick unique names from pool for the number of bots chosen
+    activeBotNames = botNamesPool.sort(() => Math.random() - 0.5).slice(0, bots);
+
+    document.getElementById('unoSetup').style.display = 'none'; 
+    document.getElementById('unoGame').style.display = 'block';
+    document.getElementById('unoBotAnimContainer').innerHTML = '';
+    
+    unoDeck = buildUnoDeck(); 
+    unoPlayers = Array.from({length: bots + 1}, () => []); 
     for(let i=0; i<7; i++) unoPlayers.forEach(p => p.push(unoDeck.pop())); 
     do { unoDiscard = unoDeck.pop(); } while(unoDiscard.c === 'wild');
     unoColor = unoDiscard.c; unoDir = 1; unoCurr = 0;
     
-    sfx.cardDeal(); updateUnoUI("game started! your turn.");
+    sfx.cardDeal(); 
+    updateUnoUI("game started! your turn.");
 }
 
 function updateUnoUI(logText) {
     let bHtml = '';
     for(let i=1; i<unoPlayers.length; i++) {
-        bHtml += `<div class="bot-tag ${unoCurr === i ? 'active' : ''}">bot ${i}<span>${unoPlayers[i].length} cards</span></div>`;
+        let name = activeBotNames[i-1] || `bot ${i}`;
+        bHtml += `<div class="bot-tag ${unoCurr === i ? 'active' : ''}">${name}<span>${unoPlayers[i].length} cards</span></div>`;
     }
     document.getElementById('unoBotsStatus').innerHTML = bHtml;
     
@@ -426,30 +474,36 @@ function processUnoEffect(c, playerIdx) {
 }
 
 function checkUnoWin(playerIdx) {
+    let name = playerIdx === 0 ? "you" : (activeBotNames[playerIdx-1] || `bot ${playerIdx}`);
     if(unoPlayers[playerIdx].length === 0) {
         if(playerIdx === 0) {
             let winAmt = unoBetAmt * (unoPlayers.length - 1);
             updateBalance(winAmt); sfx.win(); status('unoStatus', `you won! payout $${winAmt.toFixed(2)}`, true);
         } else {
-            sfx.lose(); status('unoStatus', `bot ${playerIdx} won. you lost.`, false);
+            sfx.lose(); status('unoStatus', `${name} won. you lost.`, false);
         }
         document.getElementById('unoSetup').style.display = 'block'; document.getElementById('unoGame').style.display = 'none';
         return;
     }
-    unoNextTurn(playerIdx === 0 ? "you played a card." : `bot ${playerIdx} played a card.`);
+    unoNextTurn(playerIdx === 0 ? "you played a card." : `${name} played a card.`);
 }
 
 function unoNextTurn(logMsg) {
     unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
-    let turnMsg = unoCurr === 0 ? "your turn" : `bot ${unoCurr}'s turn`;
-    updateUnoUI(`${logMsg} ${turnMsg}`);
-    if(unoCurr !== 0) setTimeout(unoBotPlay, 1000); // 1 sec delay to see what bots do
+    let nextName = unoCurr === 0 ? "your turn" : `${activeBotNames[unoCurr-1] || `bot ${unoCurr}`}'s turn`;
+    updateUnoUI(`${logMsg} ${nextName}`);
+    if(unoCurr !== 0) setTimeout(unoBotPlay, 1600); // 1.6 sec delay to enjoy visual floating animation feed
 }
 
 function unoBotPlay() {
     let hand = unoPlayers[unoCurr]; let vIdx = hand.findIndex(c => isUnoValid(c));
+    let name = activeBotNames[unoCurr-1] || `bot ${unoCurr}`;
     if(vIdx !== -1) {
         let c = hand[vIdx]; hand.splice(vIdx, 1); unoDiscard = c;
+        
+        // Trigger visual layout play notification animation element
+        animateBotCardPlay(c);
+        
         if(c.c === 'wild') {
             let counts = {red:0, blue:0, green:0, yellow:0};
             hand.forEach(hc => { if(hc.c !== 'wild') counts[hc.c]++; });
@@ -458,6 +512,6 @@ function unoBotPlay() {
         sfx.cardDeal(); processUnoEffect(c, unoCurr);
     } else {
         if(unoDeck.length === 0) unoDeck = buildUnoDeck();
-        hand.push(unoDeck.pop()); sfx.cardDeal(); unoNextTurn(`bot ${unoCurr} drew a card.`);
+        hand.push(unoDeck.pop()); sfx.cardDeal(); unoNextTurn(`${name} drew a card.`);
     }
 }
