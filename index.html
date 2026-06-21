@@ -3,120 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Grand Casino</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>casino</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
 <body>
 
     <header>
-        <div class="logo">THE <span class="text-gold">CASINO</span></div>
+        <div class="logo">the casino.</div>
         <div class="header-right">
-            <div class="balance-container font-mono">
-                $ <span id="balanceDisplay">1000.00</span>
+            <div class="balance-container">
+                balance: $<span id="balanceDisplay">1000.00</span>
             </div>
             <div class="menu-container">
-                <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+                <button class="hamburger-btn" onclick="toggleMenu()">menu</button>
                 <div class="dropdown-menu" id="gameMenu">
-                    <a onclick="openGame('slots')">🎰 Classic Slots</a>
-                    <a onclick="openGame('wheel')">🎡 Wheel of Fortune</a>
-                    <a onclick="openGame('blackjack')">🃏 Blackjack 21</a>
-                    <a onclick="openGame('crash')">📈 Crash</a>
-                    <a onclick="openGame('roulette')">🔴 Roulette</a>
+                    <a onclick="openGame('slots')">🎰 slots</a>
+                    <a onclick="openGame('wheel')">🎡 wheel</a>
+                    <a onclick="openGame('blackjack')">🃏 blackjack</a>
+                    <a onclick="openGame('crash')">📈 crash</a>
+                    <a onclick="openGame('roulette')">🔴 roulette</a>
                 </div>
             </div>
         </div>
     </header>
 
-    <div id="welcome" class="game-view active-view" style="padding-top: 100px;">
-        <h1 style="font-size: 3rem; margin-bottom: 20px;">Welcome to The Grand</h1>
-        <p style="color: #aaa; font-size: 1.2rem;">Select a game from the menu in the top right to begin.</p>
-        <p style="color: var(--gold); margin-top: 40px; font-weight: bold;">(Click anywhere or start a game to enable audio)</p>
-    </div>
-
-    <div id="slots" class="game-view">
-        <h1>Classic Slots</h1>
+    <div id="slots" class="game-view active-view">
+        <h1>slots</h1>
         <div class="slots-container">
             <div class="reel" id="reel1">🍒</div>
             <div class="reel" id="reel2">🍒</div>
             <div class="reel" id="reel3">🍒</div>
         </div>
         <div class="bet-controls">
-            <input type="number" id="slotsBet" class="bet-input font-mono" value="10" min="1">
-            <button class="polished-button-primary" id="btnSlots" onclick="playSlots()">Spin</button>
+            <span>bet:</span>
+            <input type="number" id="slotsBet" class="bet-input" value="10" min="1">
+            <button class="primary-btn" id="btnSlots" onclick="playSlots()">spin</button>
         </div>
-        <div id="slotsStatus" class="game-status"></div>
+        <div id="slotsStatus" class="game-status">ready to spin</div>
     </div>
 
     <div id="wheel" class="game-view">
-        <h1>Wheel of Fortune</h1>
+        <h1>wheel of fortune</h1>
         <div class="wheel-container">
             <div class="wheel-pointer"></div>
-            <div class="wheel" id="spinWheel">
-                </div>
+            <div class="wheel" id="spinWheel"></div>
         </div>
         <div class="bet-controls">
-            <input type="number" id="wheelBet" class="bet-input font-mono" value="10" min="1">
-            <button class="polished-button-primary" id="btnWheel" onclick="playWheel()">Spin Wheel</button>
+            <span>bet:</span>
+            <input type="number" id="wheelBet" class="bet-input" value="10" min="1">
+            <button class="primary-btn" id="btnWheel" onclick="playWheel()">spin</button>
         </div>
         <div id="wheelStatus" class="game-status"></div>
     </div>
 
     <div id="blackjack" class="game-view">
-        <h1>Blackjack</h1>
+        <h1>blackjack</h1>
         <div>
-            <p>Dealer Hand (<span id="dlrScore">0</span>)</p>
+            <p>dealer hand (<span id="dlrScore">0</span>)</p>
             <div class="cards-area" id="dlrCards"></div>
         </div>
         <div>
-            <p>Your Hand (<span id="plrScore">0</span>)</p>
+            <p>your hand (<span id="plrScore">0</span>)</p>
             <div class="cards-area" id="plrCards"></div>
         </div>
         <div class="bet-controls" id="bjBetPhase">
-            <input type="number" id="bjBet" class="bet-input font-mono" value="10" min="1">
-            <button class="polished-button-primary" onclick="startBlackjack()">Deal</button>
+            <span>bet:</span>
+            <input type="number" id="bjBet" class="bet-input" value="10" min="1">
+            <button class="primary-btn" onclick="startBlackjack()">deal</button>
         </div>
         <div class="bj-controls" id="bjActionPhase" style="display: none;">
-            <button class="polished-button-primary" onclick="bjHit()">Hit</button>
-            <button class="polished-button-primary" onclick="bjStand()" style="background: #111; border-color: #333;">Stand</button>
+            <button class="primary-btn" onclick="bjHit()">hit</button>
+            <button class="primary-btn danger-btn" onclick="bjStand()">stand</button>
         </div>
         <div id="bjStatus" class="game-status"></div>
     </div>
 
     <div id="crash" class="game-view">
-        <h1>Crash</h1>
+        <h1>crash</h1>
         <div class="crash-graph" id="crashGraphContainer">
-            <canvas id="crashCanvas" width="800" height="250"></canvas>
-            <div class="multiplier-text font-mono" id="crashMult">1.00x</div>
+            <canvas id="crashCanvas" width="1000" height="400"></canvas>
+            <div class="multiplier-text" id="crashMult">1.00x</div>
         </div>
         <div class="bet-controls">
-            <input type="number" id="crashBet" class="bet-input font-mono" value="10" min="1">
-            <button class="polished-button-primary" id="btnCrash" onclick="startCrash()">Start / Bet</button>
-            <button class="polished-button-primary" id="btnCashout" onclick="cashoutCrash()" style="display: none; background: #fbbf24; color: #000; border-color: #f59e0b;">Cashout</button>
+            <span>bet:</span>
+            <input type="number" id="crashBet" class="bet-input" value="10" min="1">
+            <button class="primary-btn" id="btnCrash" onclick="startCrash()">start</button>
+            <button class="primary-btn cashout-btn" id="btnCashout" onclick="cashoutCrash()" style="display: none;">cashout</button>
         </div>
         <div id="crashStatus" class="game-status"></div>
     </div>
 
     <div id="roulette" class="game-view">
-        <h1>Roulette</h1>
+        <h1>roulette</h1>
         <div class="roulette-result" id="rouletteResult">--</div>
         
         <div class="roulette-options">
             <label class="r-label r-red">
-                <input type="radio" name="r_bet" value="red" checked> Red (2x)
+                <input type="radio" name="r_bet" value="red" checked> red (2x)
             </label>
             <label class="r-label r-green">
-                <input type="radio" name="r_bet" value="green"> Zero (36x)
+                <input type="radio" name="r_bet" value="green"> zero (36x)
             </label>
             <label class="r-label r-black">
-                <input type="radio" name="r_bet" value="black"> Black (2x)
+                <input type="radio" name="r_bet" value="black"> black (2x)
             </label>
         </div>
 
         <div class="bet-controls">
-            <input type="number" id="rouletteBet" class="bet-input font-mono" value="10" min="1">
-            <button class="polished-button-primary" id="btnRoulette" onclick="playRoulette()">Spin Roulette</button>
+            <span>bet:</span>
+            <input type="number" id="rouletteBet" class="bet-input" value="10" min="1">
+            <button class="primary-btn" id="btnRoulette" onclick="playRoulette()">spin</button>
         </div>
         <div id="rouletteStatus" class="game-status"></div>
     </div>
