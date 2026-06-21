@@ -1,6 +1,6 @@
 let balance = localStorage.getItem('simpleCasinoBal') ? parseFloat(localStorage.getItem('simpleCasinoBal')) : 1000.00;
 
-// Audio System
+// audio engine
 let audioCtx;
 function initAudio() {
     if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -23,7 +23,6 @@ function playTone(freq, type, duration, vol=0.1) {
 }
 
 const sfx = {
-    // Alternating pitch using sine wave to avoid pattern fatigue
     tick: (base = 1, mod = 0) => playTone(400 * (base + Math.sin(mod)*0.15), 'sine', 0.05, 0.1),
     thud: () => playTone(150, 'square', 0.1, 0.1),
     wheelTick: (base = 1, mod = 0) => playTone(600 * (base + Math.sin(mod)*0.2), 'triangle', 0.05, 0.05),
@@ -34,7 +33,7 @@ const sfx = {
     crashExplode: () => { playTone(100, 'sawtooth', 0.5, 0.2); playTone(50, 'square', 0.8, 0.2); }
 };
 
-// Confetti System
+// confetti
 const confCanvas = document.getElementById('confettiCanvas');
 const cctx = confCanvas.getContext('2d');
 let confParticles = [];
@@ -64,19 +63,18 @@ function drawConfetti() {
     requestAnimationFrame(drawConfetti);
 }
 
-// Balance Management
+// core balance
 function updateBalance(amount) {
     balance += amount;
     localStorage.setItem('simpleCasinoBal', balance.toFixed(2));
     document.getElementById('balanceDisplay').innerText = balance.toFixed(2);
-    
     const el = document.querySelector('.balance-container');
     el.style.color = amount > 0 ? 'var(--win-color)' : (amount < 0 ? 'var(--lose-color)' : 'inherit');
     setTimeout(() => el.style.color = 'inherit', 400);
 }
 updateBalance(0);
 
-// App Navigation
+// menu & navigation
 function toggleMenu() { initAudio(); document.getElementById('gameMenu').classList.toggle('show'); }
 function openGame(id) {
     document.querySelectorAll('.game-view').forEach(el => el.classList.remove('active-view'));
@@ -99,8 +97,8 @@ window.onclick = function(event) {
     if (!event.target.closest('.custom-dropdown-container')) document.getElementById('horseOptions').classList.remove('show');
 }
 
-// --- 1. Slots ---
-const symbols = ['🍒', '🍋', '🍉', '🍇', '🔔', '💎', '7️⃣', '🍀', '🍎', '💰', '⭐', '🎱'];
+// --- 1. SLOTS (Downward Roll Animation) ---
+const slotSymbols = ['🍒', '🍋', '🍉', '🍇', '🔔', '💎', '7️⃣', '🍀', '🍎', '💰', '⭐', '🎱'];
 function playSlots() {
     let bet = getBet('slotsBet'); if (!bet) return;
     updateBalance(-bet);
@@ -108,49 +106,74 @@ function playSlots() {
     const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
     document.getElementById('btnSlots').disabled = true;
     document.getElementById('slotsStatus').innerHTML = 'spinning...'; document.getElementById('slotsStatus').className = 'game-status';
-    reels.forEach(r => r.style.borderColor = '#333');
 
-    let results = [symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)], symbols[Math.floor(Math.random()*symbols.length)]];
-    let stops = [15, 25, 35]; let ticks = 0;
-    
-    let spinInterval = setInterval(() => {
-        let ticked = false;
-        reels.forEach((r, i) => {
-            if (ticks < stops[i]) { r.innerText = symbols[Math.floor(Math.random()*symbols.length)]; ticked = true; } 
-            else if (ticks === stops[i]) { r.innerText = results[i]; r.style.borderColor = '#fff'; sfx.thud(); }
-        });
+    let results = [
+        slotSymbols[Math.floor(Math.random()*slotSymbols.length)],
+        slotSymbols[Math.floor(Math.random()*slotSymbols.length)],
+        slotSymbols[Math.floor(Math.random()*slotSymbols.length)]
+    ];
+
+    // Build internal reels for sliding
+    reels.forEach((r, i) => {
+        let html = '';
+        for(let j=0; j<29; j++) html += `<div class="slot-sym">${slotSymbols[Math.floor(Math.random()*slotSymbols.length)]}</div>`;
+        html += `<div class="slot-sym">${results[i]}</div>`; // Final symbol
+        r.innerHTML = `<div class="reel-inner" id="innerReel${i}">${html}</div>`;
         
-        if (ticked) sfx.tick(1, ticks); // Alternating pitch mapping
-        ticks++;
+        let inner = document.getElementById(`innerReel${i}`);
+        inner.style.transition = 'none';
+        inner.style.transform = 'translateY(0px)';
+    });
 
-        if (ticks > stops[2]) {
-            clearInterval(spinInterval); document.getElementById('btnSlots').disabled = false;
-            
-            // Unique win logic
-            if (results[0] === results[1] && results[1] === results[2]) {
-                let mult = results[0] === '7️⃣' ? 100 : (results[0] === '💎' ? 50 : 10);
-                updateBalance(bet * mult); sfx.win(); status('slotsStatus', `jackpot! won $${(bet * mult).toFixed(2)} (${mult}x)`, true);
-            } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
-                let pairSym = (results[0] === results[1]) ? results[0] : results[2];
-                let mult = pairSym === '7️⃣' ? 5 : (pairSym === '💎' ? 3 : 1.5);
-                updateBalance(bet * mult); sfx.win(); status('slotsStatus', `pair of ${pairSym}! won $${(bet * mult).toFixed(2)} (${mult}x)`, true);
-            } else {
-                sfx.lose(); status('slotsStatus', `loss. try again.`, false);
-            }
+    // Audio ticking loop
+    let ticks = 0; let tickInterval = setInterval(() => { sfx.tick(1, ticks++); }, 100);
+
+    // Trigger animation frame so transition takes effect
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            reels.forEach((r, i) => {
+                let inner = document.getElementById(`innerReel${i}`);
+                // staggered stopping times
+                inner.style.transition = `transform ${2 + i*0.8}s cubic-bezier(0.1, 0.7, 0.1, 1)`;
+                inner.style.transform = `translateY(-${29 * 240}px)`; // 240px is symbol height
+            });
+        });
+    });
+
+    // Check result after longest animation finishes (approx 3.6s)
+    setTimeout(() => {
+        clearInterval(tickInterval);
+        document.getElementById('btnSlots').disabled = false;
+        sfx.thud();
+        
+        if (results[0] === results[1] && results[1] === results[2]) {
+            let mult = results[0] === '7️⃣' ? 100 : (results[0] === '💎' ? 50 : 10);
+            updateBalance(bet * mult); sfx.win(); status('slotsStatus', `jackpot! won $${(bet * mult).toFixed(2)} (${mult}x)`, true);
+        } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
+            let pairSym = (results[0] === results[1]) ? results[0] : results[2];
+            let mult = pairSym === '7️⃣' ? 5 : (pairSym === '💎' ? 3 : 1.5);
+            updateBalance(bet * mult); sfx.win(); status('slotsStatus', `pair of ${pairSym}! won $${(bet * mult).toFixed(2)} (${mult}x)`, true);
+        } else {
+            sfx.lose(); status('slotsStatus', `loss. try again.`, false);
         }
-    }, 80);
+    }, 3800);
 }
 
-// --- 2. Wheel ---
+// --- 2. WHEEL ---
 const wheelMultipliers = [0, 0.5, 1.5, 0, 2, 0.1, 3, 0.5, 1, 0, 5, 0.5, 2.5, 0, 1.2, 0.2, 4, 0.5, 0, 10];
 const wheelEl = document.getElementById('spinWheel');
 let gradStr = 'conic-gradient(';
 wheelMultipliers.forEach((m, i) => {
     let color = m === 10 ? '#fff' : (m === 0 ? '#111' : (i % 2 === 0 ? '#dc2626' : '#222'));
-    let st = i * (360/20), en = (i + 1) * (360/20);
+    let st = i * 18; // 360 / 20 = 18 degrees per segment
+    let en = (i + 1) * 18;
     gradStr += `${color} ${st}deg ${en}deg${i < 19 ? ',' : ''}`;
+    
     let lbl = document.createElement('div'); lbl.className = 'wheel-label'; lbl.innerText = m + 'x';
-    lbl.style.transform = `rotate(${st + (18) - 90}deg) translateY(-50%)`;
+    // Math logic: transformOrigin is 0 50%. A rotate of 0deg points at 3 o'clock. 
+    // The conic-gradient starts at 12 o'clock. 12 o'clock relative to 3 o'clock is -90deg.
+    // The center of the segment is at its start + half its width (9 degrees).
+    lbl.style.transform = `translateY(-50%) rotate(${st + 9 - 90}deg)`;
     if(m===10) lbl.style.color = '#000';
     wheelEl.appendChild(lbl);
 });
@@ -174,7 +197,7 @@ function playWheel() {
         wheelEl.style.transform = `rotate(${ang}deg)`;
         
         let cSeg = Math.floor(((360 - (ang % 360)) % 360) / 18);
-        if (cSeg !== lSeg && prog > 0) { lSeg = cSeg; sfx.wheelTick(1.5 - prog, ang); } // mod ang for varied pitch
+        if (cSeg !== lSeg && prog > 0) { lSeg = cSeg; sfx.wheelTick(1.5 - prog, ang); } 
 
         if (prog < 1) requestAnimationFrame(animW);
         else {
@@ -187,7 +210,7 @@ function playWheel() {
     requestAnimationFrame(animW);
 }
 
-// --- 3. Blackjack ---
+// --- 3. BLACKJACK ---
 let plrHand=[], dlrHand=[], bjCurBet=0;
 function getCardObj() {
     const s = ['♥', '♦', '♣', '♠'], v = ['2','3','4','5','6','7','8','9','10','j','q','k','a'];
@@ -199,7 +222,6 @@ function calcScore(h) {
     let s = 0, a = 0; h.forEach(c => { s += c.num; if(c.val==='a') a++; });
     while(s > 21 && a > 0) { s -= 10; a--; } return s;
 }
-
 function startBlackjack() {
     bjCurBet = getBet('bjBet'); if(!bjCurBet) return;
     updateBalance(-bjCurBet);
@@ -229,10 +251,9 @@ function handleBjEnd(isNat = false) {
     else { sfx.lose(); status('bjStatus', 'dealer wins.', false); }
 }
 
-// --- 4. Crash ---
+// --- 4. CRASH ---
 let crMult=1.00, crTarg=0, isCr=false, crBet=0, crHist=[], crAF;
 const cv=document.getElementById('crashCanvas'), cx=cv.getContext('2d');
-
 function drCrLine() {
     cx.clearRect(0, 0, cv.width, cv.height); if(crHist.length===0) return;
     let mX = Math.max(crHist[crHist.length-1].t, 5000), mY = Math.max(crMult, 2.0);
@@ -248,7 +269,6 @@ function startCrash() {
     crTarg=Math.max(1.00, (100/(100-Math.random()*100))*0.99); if(Math.random()<0.05) crTarg=1.00; 
     document.getElementById('btnCrash').style.display='none'; document.getElementById('btnCashout').style.display='block';
     document.getElementById('crashGraphContainer').classList.remove('crashing'); document.getElementById('crashStatus').innerHTML='';
-    
     let st=performance.now(), lt=st;
     function runCr(tm) {
         if(!isCr) return; let el = tm - st; crMult = Math.pow(1.00005, el); 
@@ -267,121 +287,262 @@ function endCrash(won) {
     } else { drCrLine(); status('crashStatus', `cashed out! won $${(crBet*crMult).toFixed(2)}`, true); }
 }
 
-// --- 5. Roulette ---
+// --- 5. ROULETTE ---
 const redNum=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 function playRoulette() {
     let bet=getBet('rouletteBet'); if(!bet) return;
     const sBet = document.querySelector('input[name="r_bet"]:checked').value;
     updateBalance(-bet);
-    
     const btn=document.getElementById('btnRoulette'), rd=document.getElementById('rouletteResult');
     btn.disabled=true; document.getElementById('rouletteStatus').innerHTML='spinning...'; document.getElementById('rouletteStatus').className='game-status';
-
     let t=0, cyc=setInterval(() => { rd.innerText=Math.floor(Math.random()*37); rd.style.borderColor='#333'; sfx.tick(1, t++); }, 60);
-
     setTimeout(() => {
         clearInterval(cyc); btn.disabled=false;
         let wN=Math.floor(Math.random()*37), wC='green', dC='#059669'; 
         if(wN!==0) { if(redNum.includes(wN)) {wC='red';dC='#dc2626';} else {wC='black';dC='#fff';} }
         rd.innerText=wN; rd.style.borderColor=dC;
-        
-        if(sBet===wC) {
-            let m=wC==='green'?36:2; updateBalance(bet*m); sfx.win(); status('rouletteStatus', `landed on ${wN} ${wC}! won $${(bet*m).toFixed(2)}`, true);
+        if(sBet===wC) { let m=wC==='green'?36:2; updateBalance(bet*m); sfx.win(); status('rouletteStatus', `landed on ${wN} ${wC}! won $${(bet*m).toFixed(2)}`, true);
         } else { sfx.lose(); status('rouletteStatus', `landed on ${wN} ${wC}. lost.`, false); }
     }, 2500);
 }
 
-// --- 6. Horse Racing ---
+// --- 6. HORSE RACING ---
 const horses = [
     { id: 0, name: "bullet'n board", hex: "#dc2626" }, { id: 1, name: "lightning strikes thrice", hex: "#facc15" },
     { id: 2, name: "superstitional realism", hex: "#22c55e" }, { id: 3, name: "door knob", hex: "#3b82f6" },
     { id: 4, name: "jovial merryment", hex: "#f97316" }, { id: 5, name: "downtown skybox", hex: "#a855f7" },
     { id: 6, name: "cyan", hex: "#06b6d4" }, { id: 7, name: "resolute mind afternoon", hex: "#ec4899" },
     { id: 8, name: "comely material morning", hex: "#84cc16" }, { id: 9, name: "a mysterious figure", hex: "#333333" }, 
-    { id: 10, name: "garbage bin", hex: "#78350f" }, { id: 11, name: "meisho doto", hex: "#1e3a8a" },
+    { id: 10, name: "garbage bin", hex: "#78350f" }, { id: 11, name: "nighttime knifemare", hex: "#1e3a8a" },
     { id: 12, name: "00b", hex: "#ffffff" }, { id: 13, name: "00e", hex: "#6b7280" },
     { id: 14, name: "006", hex: "#d946ef" }, { id: 15, name: "009", hex: "#14b8a6" }
 ];
-
-let selectedHorseId = null;
-let isRacing = false;
-
-// Initialize Track & Dropdown
-const trk = document.getElementById('raceTrack');
+let selectedHorseId = null; let isRacing = false;
 const opts = document.getElementById('horseOptions');
 horses.forEach((h, i) => {
-    // Build Lane
-    let l = document.createElement('div'); l.className = 'lane';
-    let e = document.createElement('div'); e.className = 'horse-emoji'; e.id = 'horse-' + i;
-    e.innerText = '🐴'; e.setAttribute('data-name', h.name);
-    e.style.textShadow = `0 0 10px ${h.hex}, 0 0 20px ${h.hex}`;
-    l.appendChild(e); trk.appendChild(l);
-    
-    // Build Dropdown Option
     let o = document.createElement('div'); o.className = 'custom-option';
     o.innerHTML = `<span class="horse-preview" style="text-shadow: 0 0 10px ${h.hex}">🐴</span> ${h.name}`;
     o.onclick = () => selectHorse(i);
     opts.appendChild(o);
 });
-
-function toggleHorseDropdown(e) {
-    e.stopPropagation();
-    if(!isRacing) document.getElementById('horseOptions').classList.toggle('show');
-}
+function toggleHorseDropdown(e) { e.stopPropagation(); if(!isRacing) document.getElementById('horseOptions').classList.toggle('show'); }
 function selectHorse(id) {
     selectedHorseId = id;
     document.getElementById('selectedHorseText').innerHTML = `<span style="text-shadow: 0 0 10px ${horses[id].hex}">🐴</span> ${horses[id].name}`;
     document.getElementById('horseOptions').classList.remove('show');
 }
-
 function startDerby() {
     if(isRacing) return;
     if(selectedHorseId === null) { alert("please select a horse."); return; }
     let bet = getBet('derbyBet'); if(!bet) return;
     
-    updateBalance(-bet);
-    isRacing = true; document.getElementById('btnDerby').disabled = true;
+    updateBalance(-bet); isRacing = true; document.getElementById('btnDerby').disabled = true;
     document.getElementById('derbyStatus').innerHTML = 'they\'re off!'; document.getElementById('derbyStatus').className = 'game-status';
 
-    // Reset Horses
-    let hEls = [];
-    let positions = [];
-    for(let i=0; i<16; i++) {
-        let el = document.getElementById('horse-'+i);
-        el.style.left = '0%';
-        hEls.push(el); positions.push(0);
-    }
+    // select 6 horses for this race (including selected)
+    let raceGroup = [horses[selectedHorseId]];
+    let pool = horses.filter(h => h.id !== selectedHorseId).sort(() => Math.random() - 0.5);
+    raceGroup.push(...pool.slice(0, 5));
+    raceGroup.sort(() => Math.random() - 0.5); // shuffle lane order
 
-    let raceAnim;
-    let ticks = 0;
+    let trk = document.getElementById('raceTrack');
+    trk.innerHTML = ''; let hEls = [], positions = [];
+    
+    raceGroup.forEach((h, i) => {
+        let l = document.createElement('div'); l.className = 'lane';
+        let e = document.createElement('div'); e.className = 'horse-emoji'; 
+        e.innerText = '🐴'; e.setAttribute('data-name', h.name); e.style.textShadow = `0 0 10px ${h.hex}, 0 0 20px ${h.hex}`;
+        e.style.left = '0%';
+        l.appendChild(e); trk.appendChild(l);
+        hEls.push(e); positions.push(0);
+    });
+
+    let raceAnim, ticks = 0, finishedOrder = [];
     
     function runRace() {
-        let finishedIndex = -1;
-        // Move horses
-        for(let i=0; i<16; i++) {
-            // Random speed variance
+        for(let i=0; i<6; i++) {
+            if(positions[i] >= 100) continue;
             positions[i] += Math.random() * 0.8;
-            hEls[i].style.left = positions[i] + '%';
-            if(positions[i] >= 100) finishedIndex = i;
+            hEls[i].style.left = Math.min(positions[i], 100) + '%';
+            if(positions[i] >= 100 && !finishedOrder.includes(raceGroup[i])) {
+                finishedOrder.push(raceGroup[i]);
+            }
         }
         
-        if (ticks++ % 4 === 0) sfx.tick(1, ticks); // Galloping sound rhythm
-
-        if(finishedIndex !== -1) {
+        if (ticks++ % 4 === 0) sfx.tick(1, ticks);
+        
+        if(finishedOrder.length >= 2) {
             cancelAnimationFrame(raceAnim);
             isRacing = false; document.getElementById('btnDerby').disabled = false;
-            let winHorse = horses[finishedIndex];
             
-            if(finishedIndex === selectedHorseId) {
-                updateBalance(bet * 15); sfx.win();
-                status('derbyStatus', `${winHorse.name} wins! you won $${(bet*15).toFixed(2)}`, true);
+            let first = finishedOrder[0]; let second = finishedOrder[1];
+            
+            if(first.id === selectedHorseId) {
+                updateBalance(bet * 5); sfx.win();
+                status('derbyStatus', `${first.name} wins 1st! you won $${(bet*5).toFixed(2)} (5x)`, true);
+            } else if (second.id === selectedHorseId) {
+                updateBalance(bet * 2); sfx.win();
+                status('derbyStatus', `${second.name} took 2nd! you won $${(bet*2).toFixed(2)} (2x)`, true);
             } else {
                 sfx.lose();
-                status('derbyStatus', `${winHorse.name} won. you lost.`, false);
+                status('derbyStatus', `${first.name} won. your horse lost.`, false);
             }
-        } else {
-            raceAnim = requestAnimationFrame(runRace);
-        }
+        } else { raceAnim = requestAnimationFrame(runRace); }
     }
     raceAnim = requestAnimationFrame(runRace);
+}
+
+// --- 7. UNO ---
+let unoDeck = [], unoPlayers = [], unoDiscard = null, unoColor = '', unoDir = 1, unoCurr = 0, unoBetAmt = 0;
+const unoColors = ['red', 'blue', 'green', 'yellow'];
+const unoVals = ['0','1','2','3','4','5','6','7','8','9','skip','rev','+2'];
+
+function buildUnoDeck() {
+    let d = [];
+    unoColors.forEach(c => {
+        d.push({c: c, v: '0'});
+        for(let i=1; i<=9; i++) { d.push({c: c, v: i.toString()}); d.push({c: c, v: i.toString()}); }
+        ['skip','rev','+2'].forEach(v => { d.push({c: c, v: v}); d.push({c: c, v: v}); });
+    });
+    for(let i=0; i<4; i++) { d.push({c: 'wild', v: 'wild'}); d.push({c: 'wild', v: '+4'}); }
+    return d.sort(() => Math.random() - 0.5);
+}
+
+function startUno() {
+    let bots = parseInt(document.getElementById('unoBots').value);
+    if(bots < 1 || bots > 10) return alert('choose 1-10 bots.');
+    unoBetAmt = getBet('unoBet'); if(!unoBetAmt) return;
+    updateBalance(-unoBetAmt);
+
+    document.getElementById('unoSetup').style.display = 'none';
+    document.getElementById('unoGame').style.display = 'block';
+    
+    unoDeck = buildUnoDeck();
+    unoPlayers = Array.from({length: bots + 1}, () => []); // 0 is player
+    for(let i=0; i<7; i++) { unoPlayers.forEach(p => p.push(unoDeck.pop())); }
+    
+    do { unoDiscard = unoDeck.pop(); } while(unoDiscard.c === 'wild');
+    unoColor = unoDiscard.c; unoDir = 1; unoCurr = 0;
+    
+    sfx.cardDeal(); updateUnoUI();
+    document.getElementById('unoStatus').innerText = 'game started! your turn.';
+    document.getElementById('unoStatus').className = 'game-status';
+}
+
+function updateUnoUI() {
+    // top bot status
+    let bHtml = '';
+    for(let i=1; i<unoPlayers.length; i++) {
+        bHtml += `<div class="bot-tag ${unoCurr === i ? 'active' : ''}">bot ${i}: ${unoPlayers[i].length} cards</div>`;
+    }
+    document.getElementById('unoBotsStatus').innerHTML = bHtml;
+    
+    // center area
+    let dCard = document.getElementById('unoDiscardCard');
+    dCard.className = `uno-card ${unoDiscard.c}`; dCard.innerText = unoDiscard.v;
+    let cInd = document.getElementById('unoCurrentColor');
+    cInd.innerText = `color: ${unoColor}`; cInd.style.color = unoColor === 'yellow' ? '#eab308' : unoColor;
+
+    // player hand
+    let hHtml = '';
+    unoPlayers[0].forEach((c, idx) => {
+        let valid = isUnoValid(c) && unoCurr === 0;
+        hHtml += `<div class="uno-card uno-hand-card ${c.c} ${valid ? '' : 'disabled'}" onclick="unoPlayerPlay(${idx})">${c.v}</div>`;
+    });
+    document.getElementById('unoPlayerHand').innerHTML = hHtml;
+    document.getElementById('unoTurnIndicator').innerText = unoCurr === 0 ? 'your turn' : `bot ${unoCurr}'s turn`;
+}
+
+function isUnoValid(c) { return c.c === 'wild' || c.c === unoColor || c.v === unoDiscard.v; }
+
+function unoPlayerPlay(idx) {
+    if(unoCurr !== 0) return;
+    let c = unoPlayers[0][idx]; if(!isUnoValid(c)) return;
+    sfx.cardDeal();
+    unoPlayers[0].splice(idx, 1);
+    unoDiscard = c;
+    if(c.c === 'wild') {
+        document.getElementById('unoWildPicker').style.display = 'block';
+        updateUnoUI(); return; // wait for color pick
+    }
+    unoColor = c.c;
+    processUnoEffect(c);
+}
+
+function unoDrawCard() {
+    if(unoCurr !== 0) return;
+    if(unoDeck.length === 0) unoDeck = buildUnoDeck();
+    unoPlayers[0].push(unoDeck.pop());
+    sfx.cardDeal();
+    unoNextTurn();
+}
+
+function unoResolveWild(color) {
+    document.getElementById('unoWildPicker').style.display = 'none';
+    unoColor = color;
+    processUnoEffect(unoDiscard);
+}
+
+function processUnoEffect(c) {
+    if(c.v === 'rev') unoDir *= -1;
+    if(c.v === 'skip') unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
+    if(c.v === '+2') {
+        let target = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
+        unoPlayers[target].push(unoDeck.pop(), unoDeck.pop());
+        unoCurr = target; // skips them
+    }
+    if(c.v === '+4') {
+        let target = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
+        unoPlayers[target].push(unoDeck.pop(), unoDeck.pop(), unoDeck.pop(), unoDeck.pop());
+        unoCurr = target; // skips them
+    }
+    checkUnoWin();
+}
+
+function checkUnoWin() {
+    if(unoPlayers[0].length === 0) {
+        let winAmt = unoBetAmt * (unoPlayers.length - 1);
+        updateBalance(winAmt); sfx.win();
+        status('unoStatus', `you won! payout $${winAmt.toFixed(2)}`, true);
+        endUno(); return;
+    }
+    for(let i=1; i<unoPlayers.length; i++) {
+        if(unoPlayers[i].length === 0) {
+            sfx.lose();
+            status('unoStatus', `bot ${i} won. you lost.`, false);
+            endUno(); return;
+        }
+    }
+    unoNextTurn();
+}
+
+function unoNextTurn() {
+    unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
+    updateUnoUI();
+    if(unoCurr !== 0) setTimeout(unoBotPlay, 800);
+}
+
+function unoBotPlay() {
+    let hand = unoPlayers[unoCurr];
+    let validIdx = hand.findIndex(c => isUnoValid(c));
+    if(validIdx !== -1) {
+        let c = hand[validIdx];
+        hand.splice(validIdx, 1);
+        unoDiscard = c;
+        if(c.c === 'wild') {
+            let counts = {red:0, blue:0, green:0, yellow:0};
+            hand.forEach(hc => { if(hc.c !== 'wild') counts[hc.c]++; });
+            unoColor = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+        } else { unoColor = c.c; }
+        sfx.cardDeal(); processUnoEffect(c);
+    } else {
+        if(unoDeck.length === 0) unoDeck = buildUnoDeck();
+        hand.push(unoDeck.pop());
+        sfx.cardDeal(); unoNextTurn();
+    }
+}
+
+function endUno() {
+    document.getElementById('unoSetup').style.display = 'block';
+    document.getElementById('unoGame').style.display = 'none';
 }

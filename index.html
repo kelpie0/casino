@@ -6,7 +6,6 @@
     <title>casino</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="script.js" defer></script>
 </head>
 <body>
@@ -28,6 +27,7 @@
                     <a onclick="openGame('crash')">📈 crash</a>
                     <a onclick="openGame('roulette')">🔴 roulette</a>
                     <a onclick="openGame('derby')">🐎 horse race</a>
+                    <a onclick="openGame('uno')">🃏 uno</a>
                 </div>
             </div>
         </div>
@@ -36,9 +36,9 @@
     <div id="slots" class="game-view active-view">
         <h1>slots</h1>
         <div class="slots-container">
-            <div class="reel" id="reel1">🍒</div>
-            <div class="reel" id="reel2">🍒</div>
-            <div class="reel" id="reel3">🍒</div>
+            <div class="reel" id="reel1"></div>
+            <div class="reel" id="reel2"></div>
+            <div class="reel" id="reel3"></div>
         </div>
         <div class="bet-controls">
             <span>bet:</span>
@@ -123,18 +123,18 @@
 
     <div id="derby" class="game-view">
         <h1>horse race</h1>
-        <p style="color:#888; margin-bottom: 20px;">pick your horse. payout is 15x.</p>
+        <p style="color:#888; margin-bottom: 20px;">1st place: 5x | 2nd place: 2x</p>
         
         <div class="custom-dropdown-container">
             <div class="custom-select" id="horseSelect" onclick="toggleHorseDropdown(event)">
                 <span id="selectedHorseText">select a horse...</span>
             </div>
-            <div class="custom-options" id="horseOptions">
-                </div>
+            <div class="custom-options" id="horseOptions"></div>
         </div>
 
         <div class="track" id="raceTrack">
-            </div>
+            <div style="color: #444; padding: 40px;">pick a horse to generate race</div>
+        </div>
 
         <div class="bet-controls">
             <span>bet:</span>
@@ -142,6 +142,51 @@
             <button class="primary-btn" id="btnDerby" onclick="startDerby()">start race</button>
         </div>
         <div id="derbyStatus" class="game-status"></div>
+    </div>
+
+    <div id="uno" class="game-view">
+        <h1>uno</h1>
+        
+        <div id="unoSetup">
+            <p style="color:#888; margin-bottom: 30px;">beat the bots. payout scales with bot count.</p>
+            <div class="bet-controls">
+                <span>bots (1-10):</span>
+                <input type="number" id="unoBots" class="bet-input" value="3" min="1" max="10" style="width: 80px;">
+                <span>bet:</span>
+                <input type="number" id="unoBet" class="bet-input" value="10" min="1">
+                <button class="primary-btn" onclick="startUno()">start uno</button>
+            </div>
+        </div>
+
+        <div id="unoGame" style="display: none;">
+            <div class="uno-header">
+                <div id="unoBotsStatus" class="uno-bots-status"></div>
+                <div id="unoTurnIndicator" class="uno-turn-indicator">your turn</div>
+            </div>
+
+            <div class="uno-center">
+                <div class="uno-deck" onclick="unoDrawCard()">
+                    <span>uno</span>
+                    <div style="font-size: 12px; font-weight: normal; margin-top: 10px;">draw</div>
+                </div>
+                <div class="uno-card" id="unoDiscardCard"></div>
+                <div class="uno-color-indicator" id="unoCurrentColor">color: red</div>
+            </div>
+
+            <p style="text-align: left; margin: 20px 0 10px 0; font-weight: bold;">your hand:</p>
+            <div class="uno-hand" id="unoPlayerHand"></div>
+
+            <div class="uno-wild-picker" id="unoWildPicker" style="display: none;">
+                <p>pick a color:</p>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                    <button class="wild-btn" style="background: #dc2626;" onclick="unoResolveWild('red')"></button>
+                    <button class="wild-btn" style="background: #2563eb;" onclick="unoResolveWild('blue')"></button>
+                    <button class="wild-btn" style="background: #16a34a;" onclick="unoResolveWild('green')"></button>
+                    <button class="wild-btn" style="background: #eab308;" onclick="unoResolveWild('yellow')"></button>
+                </div>
+            </div>
+        </div>
+        <div id="unoStatus" class="game-status"></div>
     </div>
 
 </body>
