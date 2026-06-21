@@ -350,24 +350,43 @@ function renderUnoCard(c, isValid=true, onClick='') {
 
 function animateBotCardPlay(card) {
     const container = document.getElementById('unoBotAnimContainer');
-    container.innerHTML = ''; 
+    
+    // Create the card element
     let animCard = document.createElement('div');
     let display = card.v === 'skip' ? '⊘' : (card.v === 'rev' ? '↺' : card.v);
     animCard.className = `uno-card ${card.c}`;
     animCard.setAttribute('data-val', display);
     animCard.innerHTML = `<span>${display}</span>`;
     
-    animCard.style.position = 'absolute'; animCard.style.transform = 'translate(-50%, 40px) scale(0.4)';
-    animCard.style.opacity = '0'; animCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    // Set styles for the animation
+    animCard.style.position = 'absolute';
+    animCard.style.transform = 'translate(-50%, 40px) scale(0.4)';
+    animCard.style.opacity = '0';
+    // We use a CSS transition for smooth movement
+    animCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    
     container.appendChild(animCard);
     
-    requestAnimationFrame(() => { requestAnimationFrame(() => {
-        animCard.style.transform = 'translate(-50%, 0px) scale(0.9)'; animCard.style.opacity = '1';
-    });});
+    // Trigger entrance
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            animCard.style.transform = 'translate(-50%, 0px) scale(0.9)';
+            animCard.style.opacity = '1';
+        });
+    });
+
+    // Animate exit after a delay
     setTimeout(() => {
-        animCard.style.transform = 'translate(-50%, -40px) scale(0.6)'; animCard.style.opacity = '0';
-        setTimeout(() => { container.innerHTML = ''; }, 500);
-    }, 1200);
+        animCard.style.transform = 'translate(-50%, -40px) scale(0.6)';
+        animCard.style.opacity = '0';
+        
+        // Remove only this specific card after the transition completes
+        animCard.addEventListener('transitionend', () => {
+            if (animCard.parentNode === container) {
+                container.removeChild(animCard);
+            }
+        });
+    }, 1000);
 }
 
 function startUno() {
