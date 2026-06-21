@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>the casino.</title>
+    <title>casino</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -28,6 +28,7 @@
                     <a onclick="openGame('roulette')">🔴 roulette</a>
                     <a onclick="openGame('derby')">🐎 horse race</a>
                     <a onclick="openGame('uno')">🃏 uno</a>
+                    <a onclick="openGame('connect4')">🔴 connect 4</a>
                 </div>
             </div>
         </div>
@@ -146,7 +147,6 @@
             </div>
             <div class="uno-center" style="position: relative;">
                 <div id="unoBotAnimContainer" style="position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 100;"></div>
-                
                 <div class="uno-deck" onclick="unoDrawCard()"><span>uno</span><div style="font-size:12px; margin-top:10px; font-weight:normal;">click to draw</div></div>
                 <div id="unoDiscardCard"></div>
                 <div class="uno-color-indicator" id="unoCurrentColor">color: red</div>
@@ -164,6 +164,32 @@
             </div>
         </div>
         <div id="unoStatus" class="game-status"></div>
+    </div>
+
+    <div id="connect4" class="game-view">
+        <h1>connect 4</h1>
+        <div id="c4Setup">
+            <p style="color:#888; margin-bottom: 30px;">connect 4: 2x | connect 5: 3x | connect 6: 5x</p>
+            <div class="bet-controls">
+                <span>goal:</span>
+                <select id="c4Target" class="bet-input" style="width: 100px;">
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+                <span>bet:</span>
+                <input type="number" id="c4Bet" class="bet-input" value="10" min="1">
+                <button class="primary-btn" onclick="startC4()">start game</button>
+            </div>
+        </div>
+        
+        <div id="c4Game" style="display: none;">
+            <div class="c4-container">
+                <div class="c4-board" id="c4Board">
+                    </div>
+            </div>
+        </div>
+        <div id="c4Status" class="game-status"></div>
     </div>
 </body>
 </html>

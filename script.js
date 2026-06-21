@@ -78,8 +78,7 @@ function status(id, msg, isWin) {
 window.onclick = function(event) {
     if (!event.target.matches('.hamburger-btn')) document.getElementById('gameMenu').classList.remove('show');
     if (!event.target.closest('.custom-dropdown-container')) {
-        const ho = document.getElementById('horseOptions');
-        if(ho) ho.classList.remove('show');
+        const ho = document.getElementById('horseOptions'); if(ho) ho.classList.remove('show');
     }
 }
 
@@ -103,8 +102,7 @@ function playSlots() {
         document.getElementById(`innerReel${i}`).style.transform = 'translateY(0px)';
     });
 
-    let startTime = performance.now(), lastTickIndex = [-1,-1,-1], finished = [false,false,false];
-    let durations = [2000, 2800, 3600]; 
+    let startTime = performance.now(), lastTickIndex = [-1,-1,-1], finished = [false,false,false], durations = [2000, 2800, 3600]; 
 
     function animateSlots(time) {
         let elapsed = time - startTime, allDone = true;
@@ -178,7 +176,7 @@ function playWheel() {
     requestAnimationFrame(animW);
 }
 
-// 3. BLACKJACK
+// 3. BLACKJACK (QoL: Instant 21 Natural Win & 5-Card Charlie)
 let plrHand=[], dlrHand=[], bjCurBet=0;
 function getCardObj() {
     const s = ['♥','♦','♣','♠'], v = ['2','3','4','5','6','7','8','9','10','j','q','k','a'];
@@ -193,6 +191,8 @@ function startBlackjack() {
     document.getElementById('bjBetPhase').style.display = 'none'; document.getElementById('bjActionPhase').style.display = 'flex';
     document.getElementById('bjStatus').innerHTML = ''; document.getElementById('bjStatus').className = 'game-status';
     sfx.cardDeal(); setTimeout(() => sfx.cardDeal(), 200); updateBjUI();
+    
+    // Natural 21 Instant Win
     if(calcScore(plrHand) === 21) handleBjEnd(true);
 }
 function updateBjUI(shDlr = false) {
@@ -203,12 +203,20 @@ function updateBjUI(shDlr = false) {
     else { dH += renderCard(dlrHand[1], true); document.getElementById('dlrScore').innerText = '?'; }
     document.getElementById('dlrCards').innerHTML = dH;
 }
-function bjHit() { sfx.cardDeal(); plrHand.push(getCardObj()); updateBjUI(); if(calcScore(plrHand) > 21) handleBjEnd(); }
+function bjHit() { 
+    sfx.cardDeal(); plrHand.push(getCardObj()); updateBjUI(); 
+    let score = calcScore(plrHand);
+    if(score > 21) handleBjEnd(); 
+    else if(plrHand.length === 5 && score <= 21) handleBjEnd(false, true); // 5-card Charlie instant win
+    else if(score === 21) handleBjEnd(); // Auto stand on exactly 21
+}
 function bjStand() { let dt = setInterval(() => { if(calcScore(dlrHand)<17) { sfx.cardDeal(); dlrHand.push(getCardObj()); updateBjUI(true); } else { clearInterval(dt); handleBjEnd(); } }, 500); }
-function handleBjEnd(isNat = false) {
+
+function handleBjEnd(isNat = false, fiveCard = false) {
     updateBjUI(true); document.getElementById('bjBetPhase').style.display = 'flex'; document.getElementById('bjActionPhase').style.display = 'none';
     let p = calcScore(plrHand), d = calcScore(dlrHand);
     if(p > 21) { sfx.lose(); status('bjStatus', 'bust. you lose.', false); } 
+    else if (fiveCard) { updateBalance(bjCurBet * 2); sfx.win(); status('bjStatus', `5-card charlie! you win $${(bjCurBet * 2).toFixed(2)}`, true); }
     else if (isNat) { updateBalance(bjCurBet * 2.5); sfx.win(); status('bjStatus', `blackjack! won $${(bjCurBet * 2.5).toFixed(2)}`, true); } 
     else if (d > 21 || p > d) { updateBalance(bjCurBet * 2); sfx.win(); status('bjStatus', `you win $${(bjCurBet * 2).toFixed(2)}`, true); } 
     else if (p === d) { updateBalance(bjCurBet); sfx.tick(); status('bjStatus', 'push. bet returned.', false); document.getElementById('bjStatus').style.color='#aaa'; } 
@@ -268,7 +276,7 @@ function playRoulette() {
     }, 2500);
 }
 
-// 6. HORSE RACING
+// 6. HORSE RACING (Color Lanes & Text Overlay)
 const horses = [
     {id:0,name:"bullet'n board",hex:"#dc2626"},{id:1,name:"lightning strikes thrice",hex:"#facc15"},{id:2,name:"superstitional realism",hex:"#22c55e"},{id:3,name:"door knob",hex:"#3b82f6"},
     {id:4,name:"jovial merryment",hex:"#f97316"},{id:5,name:"downtown skybox",hex:"#a855f7"},{id:6,name:"cyan",hex:"#06b6d4"},{id:7,name:"resolute mind afternoon",hex:"#ec4899"},
@@ -298,8 +306,14 @@ function startDerby() {
     let hEls = [], pos = [];
     rGrp.forEach(h => {
         let l = document.createElement('div'); l.className = 'lane';
+        
+        // Color lane background and add translucent name text
+        l.style.background = `linear-gradient(90deg, ${h.hex}33, transparent)`; 
+        let txt = document.createElement('div'); txt.className = 'lane-text'; txt.style.color = h.hex; txt.innerText = h.name;
+        
         let e = document.createElement('div'); e.className = 'horse-emoji'; e.innerText = '🐴'; e.setAttribute('data-name', h.name); e.style.textShadow = `0 0 10px ${h.hex}, 0 0 20px ${h.hex}`; e.style.left = '0%';
-        l.appendChild(e); trk.appendChild(l); hEls.push(e); pos.push(0);
+        
+        l.appendChild(txt); l.appendChild(e); trk.appendChild(l); hEls.push(e); pos.push(0);
     });
 
     let rAnim, ticks = 0, finOrd = [];
@@ -350,41 +364,23 @@ function renderUnoCard(c, isValid=true, onClick='') {
 
 function animateBotCardPlay(card) {
     const container = document.getElementById('unoBotAnimContainer');
-    
-    // Create the card element
     let animCard = document.createElement('div');
     let display = card.v === 'skip' ? '⊘' : (card.v === 'rev' ? '↺' : card.v);
     animCard.className = `uno-card ${card.c}`;
     animCard.setAttribute('data-val', display);
     animCard.innerHTML = `<span>${display}</span>`;
     
-    // Set styles for the animation
-    animCard.style.position = 'absolute';
-    animCard.style.transform = 'translate(-50%, 40px) scale(0.4)';
-    animCard.style.opacity = '0';
-    // We use a CSS transition for smooth movement
-    animCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    
+    animCard.style.position = 'absolute'; animCard.style.transform = 'translate(-50%, 40px) scale(0.4)';
+    animCard.style.opacity = '0'; animCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     container.appendChild(animCard);
     
-    // Trigger entrance
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            animCard.style.transform = 'translate(-50%, 0px) scale(0.9)';
-            animCard.style.opacity = '1';
-        });
-    });
-
-    // Animate exit after a delay
+    requestAnimationFrame(() => { requestAnimationFrame(() => {
+        animCard.style.transform = 'translate(-50%, 0px) scale(0.9)'; animCard.style.opacity = '1';
+    });});
     setTimeout(() => {
-        animCard.style.transform = 'translate(-50%, -40px) scale(0.6)';
-        animCard.style.opacity = '0';
-        
-        // Remove only this specific card after the transition completes
+        animCard.style.transform = 'translate(-50%, -40px) scale(0.6)'; animCard.style.opacity = '0';
         animCard.addEventListener('transitionend', () => {
-            if (animCard.parentNode === container) {
-                container.removeChild(animCard);
-            }
+            if (animCard.parentNode === container) container.removeChild(animCard);
         });
     }, 1000);
 }
@@ -396,8 +392,7 @@ function startUno() {
     updateBalance(-unoBetAmt);
     
     activeBotNames = botNamesPool.sort(() => Math.random() - 0.5).slice(0, bots);
-    document.getElementById('unoSetup').style.display = 'none'; 
-    document.getElementById('unoGame').style.display = 'block';
+    document.getElementById('unoSetup').style.display = 'none'; document.getElementById('unoGame').style.display = 'block';
     document.getElementById('unoBotAnimContainer').innerHTML = '';
     
     unoDeck = buildUnoDeck(); unoPlayers = Array.from({length: bots + 1}, () => []); 
@@ -456,33 +451,22 @@ function unoResolveWild(color) {
     processUnoEffect(unoDiscard, 0);
 }
 
-// -------------------------------------------------------------
-// BUG FIX: Removed 'skip' from +2 and +4, and added 2-player reverse logic
-// -------------------------------------------------------------
 function processUnoEffect(c, playerIdx) {
     let effectLog = "";
     if(c.v === 'rev') { 
         unoDir *= -1; 
-        if (unoPlayers.length === 2) { 
-            unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length; // Reverse acts as skip in 1v1
-            effectLog = " (reversed back to them)";
-        }
+        if (unoPlayers.length === 2) { unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length; effectLog = " (reversed back to them)"; }
     }
-    if(c.v === 'skip') {
-        unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
-        effectLog = " and skipped next player";
-    }
+    if(c.v === 'skip') { unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length; effectLog = " and skipped next player"; }
     if(c.v === '+2') {
         let t = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
         if(unoDeck.length < 2) unoDeck = buildUnoDeck();
-        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop()); 
-        effectLog = " and forced a draw 2"; // No longer skips the player who drew!
+        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop()); effectLog = " and forced a draw 2"; 
     }
     if(c.v === '+4') {
         let t = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
         if(unoDeck.length < 4) unoDeck = buildUnoDeck();
-        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop(), unoDeck.pop(), unoDeck.pop()); 
-        effectLog = " and forced a draw 4"; // No longer skips the player who drew!
+        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop(), unoDeck.pop(), unoDeck.pop()); effectLog = " and forced a draw 4"; 
     }
     checkUnoWin(playerIdx, effectLog);
 }
@@ -491,15 +475,11 @@ function checkUnoWin(playerIdx, effectLog = "") {
     let name = playerIdx === 0 ? "you" : (activeBotNames[playerIdx-1] || `bot ${playerIdx}`);
     if(unoPlayers[playerIdx].length === 0) {
         if(playerIdx === 0) {
-            let winAmt = unoBetAmt * (unoPlayers.length - 1);
-            updateBalance(winAmt); sfx.win(); status('unoStatus', `you won! payout $${winAmt.toFixed(2)}`, true);
-        } else {
-            sfx.lose(); status('unoStatus', `${name} won. you lost.`, false);
-        }
+            let winAmt = unoBetAmt * (unoPlayers.length - 1); updateBalance(winAmt); sfx.win(); status('unoStatus', `you won! payout $${winAmt.toFixed(2)}`, true);
+        } else { sfx.lose(); status('unoStatus', `${name} won. you lost.`, false); }
         document.getElementById('unoSetup').style.display = 'block'; document.getElementById('unoGame').style.display = 'none';
         return;
     }
-    
     let playString = playerIdx === 0 ? "you played a card" : `${name} played a card`;
     unoNextTurn(`${playString}${effectLog}.`);
 }
@@ -517,16 +497,157 @@ function unoBotPlay() {
     if(vIdx !== -1) {
         let c = hand[vIdx]; hand.splice(vIdx, 1); unoDiscard = c;
         animateBotCardPlay(c);
-        
         if(c.c === 'wild') {
             let counts = {red:0, blue:0, green:0, yellow:0};
             hand.forEach(hc => { if(hc.c !== 'wild') counts[hc.c]++; });
             unoColor = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
         } else unoColor = c.c;
-        
         sfx.cardDeal(); processUnoEffect(c, unoCurr);
     } else {
         if(unoDeck.length === 0) unoDeck = buildUnoDeck();
         hand.push(unoDeck.pop()); sfx.cardDeal(); unoNextTurn(`${name} drew a card.`);
     }
+}
+
+// 8. CONNECT 4
+let c4Board = [], c4Rows = 6, c4Cols = 7, c4Target = 4, c4BetAmt = 0, isC4Active = false;
+
+function startC4() {
+    c4Target = parseInt(document.getElementById('c4Target').value);
+    c4BetAmt = getBet('c4Bet'); if(!c4BetAmt) return;
+    updateBalance(-c4BetAmt);
+    
+    document.getElementById('c4Setup').style.display = 'none';
+    document.getElementById('c4Game').style.display = 'block';
+    document.getElementById('c4Status').innerHTML = 'your turn (red).';
+    document.getElementById('c4Status').className = 'game-status';
+    isC4Active = true;
+
+    // Initialize 2D array [row][col] -> 0=empty, 1=player(red), 2=bot(yellow)
+    c4Board = Array.from({length: c4Rows}, () => Array(c4Cols).fill(0));
+    
+    let boardHTML = '';
+    for(let c=0; c<c4Cols; c++) {
+        let colHTML = `<div class="c4-col" onclick="c4PlayerMove(${c})">`;
+        for(let r=0; r<c4Rows; r++) { colHTML += `<div class="c4-cell" id="c4-cell-${r}-${c}"></div>`; }
+        colHTML += `</div>`; boardHTML += colHTML;
+    }
+    document.getElementById('c4Board').innerHTML = boardHTML;
+}
+
+function c4DropToken(r, c, playerNum, callback) {
+    let cell = document.getElementById(`c4-cell-${r}-${c}`);
+    let token = document.createElement('div');
+    token.className = `c4-token ${playerNum === 1 ? 'c4-red' : 'c4-yellow'}`;
+    token.style.transform = 'translateY(-400px)';
+    cell.appendChild(token);
+    
+    sfx.tick(1); // tick as it starts falling
+    
+    requestAnimationFrame(() => { requestAnimationFrame(() => { token.style.transform = 'translateY(0px)'; }); });
+    
+    setTimeout(() => { sfx.thud(); if(callback) callback(); }, 600);
+}
+
+function c4PlayerMove(c) {
+    if(!isC4Active) return;
+    let r = getLowestEmptyRow(c); if(r === -1) return; // Column full
+    
+    isC4Active = false; // lock input during drop
+    c4Board[r][c] = 1;
+    
+    c4DropToken(r, c, 1, () => {
+        if(checkC4Win(1)) {
+            let mult = c4Target === 4 ? 2 : (c4Target === 5 ? 3 : 5);
+            updateBalance(c4BetAmt * mult); sfx.win();
+            status('c4Status', `you connect ${c4Target}! won $${(c4BetAmt * mult).toFixed(2)} (${mult}x)`, true);
+            endC4();
+        } else if (isC4Draw()) {
+            updateBalance(c4BetAmt); sfx.tick();
+            status('c4Status', 'draw! bet returned.', false); endC4();
+        } else {
+            document.getElementById('c4Status').innerHTML = 'bot is thinking...';
+            setTimeout(c4BotMove, 500);
+        }
+    });
+}
+
+function c4BotMove() {
+    let bestCol = -1;
+    
+    // 1. Can bot win?
+    for(let c=0; c<c4Cols; c++) {
+        let r = getLowestEmptyRow(c); if(r === -1) continue;
+        c4Board[r][c] = 2; if(checkC4Win(2)) { bestCol = c; } c4Board[r][c] = 0;
+        if(bestCol !== -1) break;
+    }
+    
+    // 2. Can player win? (Block)
+    if(bestCol === -1) {
+        for(let c=0; c<c4Cols; c++) {
+            let r = getLowestEmptyRow(c); if(r === -1) continue;
+            c4Board[r][c] = 1; if(checkC4Win(1)) { bestCol = c; } c4Board[r][c] = 0;
+            if(bestCol !== -1) break;
+        }
+    }
+    
+    // 3. Random fallback
+    if(bestCol === -1) {
+        let validCols = [];
+        for(let c=0; c<c4Cols; c++) { if(getLowestEmptyRow(c) !== -1) validCols.push(c); }
+        if(validCols.length > 0) bestCol = validCols[Math.floor(Math.random() * validCols.length)];
+    }
+    
+    if(bestCol === -1) return; // shouldn't happen unless draw logic failed
+    
+    let r = getLowestEmptyRow(bestCol);
+    c4Board[r][bestCol] = 2;
+    
+    c4DropToken(r, bestCol, 2, () => {
+        if(checkC4Win(2)) {
+            sfx.lose(); status('c4Status', 'bot connected! you lost.', false); endC4();
+        } else if (isC4Draw()) {
+            updateBalance(c4BetAmt); sfx.tick(); status('c4Status', 'draw! bet returned.', false); endC4();
+        } else {
+            document.getElementById('c4Status').innerHTML = 'your turn (red).'; isC4Active = true;
+        }
+    });
+}
+
+function getLowestEmptyRow(c) {
+    for(let r = c4Rows - 1; r >= 0; r--) { if(c4Board[r][c] === 0) return r; }
+    return -1;
+}
+
+function isC4Draw() {
+    for(let c=0; c<c4Cols; c++) { if(c4Board[0][c] === 0) return false; }
+    return true;
+}
+
+function checkC4Win(player) {
+    // Check horizontal, vertical, diag-down, diag-up
+    const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+    for(let r=0; r<c4Rows; r++) {
+        for(let c=0; c<c4Cols; c++) {
+            if(c4Board[r][c] !== player) continue;
+            for(let [dr, dc] of dirs) {
+                let count = 1;
+                for(let i=1; i<c4Target; i++) {
+                    let nr = r + dr*i, nc = c + dc*i;
+                    if(nr<0 || nr>=c4Rows || nc<0 || nc>=c4Cols || c4Board[nr][nc] !== player) break;
+                    count++;
+                }
+                if(count >= c4Target) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function endC4() {
+    isC4Active = false;
+    setTimeout(() => {
+        document.getElementById('c4Setup').style.display = 'block';
+        document.getElementById('c4Game').style.display = 'none';
+    }, 2500);
 }
