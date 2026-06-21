@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grand Casino</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+    <header>
+        <div class="logo">THE <span class="text-gold">CASINO</span></div>
+        <div class="balance-container font-mono">
+            $ <span id="balanceDisplay">1000.00</span>
+        </div>
+    </header>
+
+    <div id="lobby" class="active-view">
+        <div class="polished-card" onclick="openGame('slots')">
+            <h2>🎰 Slots</h2>
+            <p>Match 3 to multiply your credits.</p>
+        </div>
+        <div class="polished-card" onclick="openGame('wheel')">
+            <h2>🎡 Wheel of Fortune</h2>
+            <p>Spin for random multipliers up to 10x.</p>
+        </div>
+        <div class="polished-card" onclick="openGame('blackjack')">
+            <h2>🃏 Blackjack 21</h2>
+            <p>Beat the dealer. Blackjack pays 3:2.</p>
+        </div>
+        <div class="polished-card" onclick="openGame('crash')">
+            <h2>📈 Crash</h2>
+            <p>Ride the multiplier, but cash out before it crashes!</p>
+        </div>
+        <div class="polished-card" onclick="openGame('roulette')">
+            <h2>🔴 Roulette</h2>
+            <p>Bet on Red, Black, or Green Zero.</p>
+        </div>
+    </div>
+
+    <div id="slots" class="game-view">
+        <button class="back-btn" onclick="showLobby()">← Back to Lobby</button>
+        <h1>Classic Slots</h1>
+        <div class="slots-container">
+            <div class="reel" id="reel1">🍒</div>
+            <div class="reel" id="reel2">🍒</div>
+            <div class="reel" id="reel3">🍒</div>
+        </div>
+        <div class="bet-controls">
+            <input type="number" id="slotsBet" class="bet-input font-mono" value="10" min="1">
+            <button class="polished-button-primary" id="btnSlots" onclick="playSlots()">Spin</button>
+        </div>
+        <div id="slotsStatus" class="game-status"></div>
+    </div>
+
+    <div id="wheel" class="game-view">
+        <button class="back-btn" onclick="showLobby()">← Back to Lobby</button>
+        <h1>Wheel of Fortune</h1>
+        <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <div class="wheel" id="spinWheel"></div>
+        </div>
+        <div class="bet-controls">
+            <input type="number" id="wheelBet" class="bet-input font-mono" value="10" min="1">
+            <button class="polished-button-primary" id="btnWheel" onclick="playWheel()">Spin Wheel</button>
+        </div>
+        <div id="wheelStatus" class="game-status"></div>
+    </div>
+
+    <div id="blackjack" class="game-view">
+        <button class="back-btn" onclick="showLobby()">← Back to Lobby</button>
+        <h1>Blackjack</h1>
+        <div>
+            <p>Dealer Hand (<span id="dlrScore">0</span>)</p>
+            <div class="cards-area" id="dlrCards"></div>
+        </div>
+        <div>
+            <p>Your Hand (<span id="plrScore">0</span>)</p>
+            <div class="cards-area" id="plrCards"></div>
+        </div>
+        <div class="bet-controls" id="bjBetPhase">
+            <input type="number" id="bjBet" class="bet-input font-mono" value="10" min="1">
+            <button class="polished-button-primary" onclick="startBlackjack()">Deal</button>
+        </div>
+        <div class="bj-controls" id="bjActionPhase" style="display: none;">
+            <button class="polished-button-primary" onclick="bjHit()">Hit</button>
+            <button class="polished-button-primary" onclick="bjStand()" style="background: #111; border-color: #333;">Stand</button>
+        </div>
+        <div id="bjStatus" class="game-status"></div>
+    </div>
+
+    <div id="crash" class="game-view">
+        <button class="back-btn" onclick="showLobby()">← Back to Lobby</button>
+        <h1>Crash</h1>
+        <div class="crash-graph" id="crashGraph">
+            <div class="multiplier-text font-mono" id="crashMult">1.00x</div>
+        </div>
+        <div class="bet-controls">
+            <input type="number" id="crashBet" class="bet-input font-mono" value="10" min="1">
+            <button class="polished-button-primary" id="btnCrash" onclick="startCrash()">Start / Bet</button>
+            <button class="polished-button-primary" id="btnCashout" onclick="cashoutCrash()" style="display: none; background: #fbbf24; color: #000; border-color: #f59e0b;">Cashout</button>
+        </div>
+        <div id="crashStatus" class="game-status"></div>
+    </div>
+
+    <div id="roulette" class="game-view">
+        <button class="back-btn" onclick="showLobby()">← Back to Lobby</button>
+        <h1>Roulette</h1>
+        
+        <div class="roulette-result" id="rouletteResult">--</div>
+        
+        <div class="roulette-options">
+            <label class="r-label r-red">
+                <input type="radio" name="r_bet" value="red" checked> Red (2x)
+            </label>
+            <label class="r-label r-green">
+                <input type="radio" name="r_bet" value="green"> Zero (36x)
+            </label>
+            <label class="r-label r-black">
+                <input type="radio" name="r_bet" value="black"> Black (2x)
+            </label>
+        </div>
+
+        <div class="bet-controls">
+            <input type="number" id="rouletteBet" class="bet-input font-mono" value="10" min="1">
+            <button class="polished-button-primary" id="btnRoulette" onclick="playRoulette()">Spin Roulette</button>
+        </div>
+        <div id="rouletteStatus" class="game-status"></div>
+    </div>
+
+</body>
+</html>
