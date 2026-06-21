@@ -109,7 +109,7 @@ function playSlots() {
         reels.forEach((r, i) => {
             let inner = document.getElementById(`innerReel${i}`);
             let progress = Math.min(elapsed / durations[i], 1);
-            let currentY = (1 - Math.pow(1 - progress, 4)) * targetY; // easeOutQuart
+            let currentY = (1 - Math.pow(1 - progress, 4)) * targetY;
             inner.style.transform = `translateY(-${currentY}px)`;
 
             let currentIndex = Math.floor(currentY / itemHeight);
@@ -176,7 +176,7 @@ function playWheel() {
     requestAnimationFrame(animW);
 }
 
-// 3. BLACKJACK (QoL: Instant 21 Natural Win & 5-Card Charlie)
+// 3. BLACKJACK
 let plrHand=[], dlrHand=[], bjCurBet=0;
 function getCardObj() {
     const s = ['♥','♦','♣','♠'], v = ['2','3','4','5','6','7','8','9','10','j','q','k','a'];
@@ -191,8 +191,6 @@ function startBlackjack() {
     document.getElementById('bjBetPhase').style.display = 'none'; document.getElementById('bjActionPhase').style.display = 'flex';
     document.getElementById('bjStatus').innerHTML = ''; document.getElementById('bjStatus').className = 'game-status';
     sfx.cardDeal(); setTimeout(() => sfx.cardDeal(), 200); updateBjUI();
-    
-    // Natural 21 Instant Win
     if(calcScore(plrHand) === 21) handleBjEnd(true);
 }
 function updateBjUI(shDlr = false) {
@@ -207,11 +205,10 @@ function bjHit() {
     sfx.cardDeal(); plrHand.push(getCardObj()); updateBjUI(); 
     let score = calcScore(plrHand);
     if(score > 21) handleBjEnd(); 
-    else if(plrHand.length === 5 && score <= 21) handleBjEnd(false, true); // 5-card Charlie instant win
-    else if(score === 21) handleBjEnd(); // Auto stand on exactly 21
+    else if(plrHand.length === 5 && score <= 21) handleBjEnd(false, true); 
+    else if(score === 21) handleBjEnd();
 }
 function bjStand() { let dt = setInterval(() => { if(calcScore(dlrHand)<17) { sfx.cardDeal(); dlrHand.push(getCardObj()); updateBjUI(true); } else { clearInterval(dt); handleBjEnd(); } }, 500); }
-
 function handleBjEnd(isNat = false, fiveCard = false) {
     updateBjUI(true); document.getElementById('bjBetPhase').style.display = 'flex'; document.getElementById('bjActionPhase').style.display = 'none';
     let p = calcScore(plrHand), d = calcScore(dlrHand);
@@ -276,7 +273,7 @@ function playRoulette() {
     }, 2500);
 }
 
-// 6. HORSE RACING (Color Lanes & Text Overlay)
+// 6. HORSE RACING
 const horses = [
     {id:0,name:"bullet'n board",hex:"#dc2626"},{id:1,name:"lightning strikes thrice",hex:"#facc15"},{id:2,name:"superstitional realism",hex:"#22c55e"},{id:3,name:"door knob",hex:"#3b82f6"},
     {id:4,name:"jovial merryment",hex:"#f97316"},{id:5,name:"downtown skybox",hex:"#a855f7"},{id:6,name:"cyan",hex:"#06b6d4"},{id:7,name:"resolute mind afternoon",hex:"#ec4899"},
@@ -306,13 +303,9 @@ function startDerby() {
     let hEls = [], pos = [];
     rGrp.forEach(h => {
         let l = document.createElement('div'); l.className = 'lane';
-        
-        // Color lane background and add translucent name text
         l.style.background = `linear-gradient(90deg, ${h.hex}33, transparent)`; 
         let txt = document.createElement('div'); txt.className = 'lane-text'; txt.style.color = h.hex; txt.innerText = h.name;
-        
         let e = document.createElement('div'); e.className = 'horse-emoji'; e.innerText = '🐴'; e.setAttribute('data-name', h.name); e.style.textShadow = `0 0 10px ${h.hex}, 0 0 20px ${h.hex}`; e.style.left = '0%';
-        
         l.appendChild(txt); l.appendChild(e); trk.appendChild(l); hEls.push(e); pos.push(0);
     });
 
@@ -347,7 +340,6 @@ function buildUnoDeck() {
     for(let i=0;i<4;i++){ d.push({c:'wild',v:'wild'}); d.push({c:'wild',v:'+4'}); }
     return d.sort(() => Math.random() - 0.5);
 }
-
 function sortUnoHand(hand) {
     const colRank = {red:1, blue:2, green:3, yellow:4, wild:5};
     hand.sort((a,b) => {
@@ -355,7 +347,6 @@ function sortUnoHand(hand) {
         return a.v.localeCompare(b.v);
     });
 }
-
 function renderUnoCard(c, isValid=true, onClick='') {
     let cls = `uno-card uno-hand-card ${c.c} ${isValid ? 'playable' : 'disabled'}`;
     let display = c.v === 'skip' ? '⊘' : (c.v === 'rev' ? '↺' : c.v);
@@ -425,7 +416,6 @@ function updateUnoUI(logText) {
         hHtml += renderUnoCard(c, valid, valid ? `unoPlayerPlay(${idx})` : '');
     });
     document.getElementById('unoPlayerHand').innerHTML = hHtml;
-    
     if(logText) document.getElementById('unoTurnIndicator').innerText = logText;
 }
 
@@ -510,29 +500,37 @@ function unoBotPlay() {
 }
 
 // 8. CONNECT 4
-let c4Board = [], c4Rows = 6, c4Cols = 7, c4Target = 4, c4BetAmt = 0, isC4Active = false;
+let c4GridState = [], c4Rows = 6, c4Cols = 7, c4Target = 4, c4BetAmt = 0, isC4Active = false;
 
-function startC4() {
-    c4Target = parseInt(document.getElementById('c4Target').value);
-    c4BetAmt = getBet('c4Bet'); if(!c4BetAmt) return;
-    updateBalance(-c4BetAmt);
-    
-    document.getElementById('c4Setup').style.display = 'none';
-    document.getElementById('c4Game').style.display = 'block';
-    document.getElementById('c4Status').innerHTML = 'your turn (red).';
-    document.getElementById('c4Status').className = 'game-status';
-    isC4Active = true;
-
-    // Initialize 2D array [row][col] -> 0=empty, 1=player(red), 2=bot(yellow)
-    c4Board = Array.from({length: c4Rows}, () => Array(c4Cols).fill(0));
-    
+// Pre-build empty board so it is visible immediately on load
+function buildC4Board() {
     let boardHTML = '';
     for(let c=0; c<c4Cols; c++) {
         let colHTML = `<div class="c4-col" onclick="c4PlayerMove(${c})">`;
         for(let r=0; r<c4Rows; r++) { colHTML += `<div class="c4-cell" id="c4-cell-${r}-${c}"></div>`; }
         colHTML += `</div>`; boardHTML += colHTML;
     }
-    document.getElementById('c4Board').innerHTML = boardHTML;
+    document.getElementById('c4BoardUI').innerHTML = boardHTML;
+}
+buildC4Board(); // render immediately
+
+function startC4() {
+    if(isC4Active) return;
+    c4Target = parseInt(document.getElementById('c4Target').value);
+    c4BetAmt = getBet('c4Bet'); if(!c4BetAmt) return;
+    updateBalance(-c4BetAmt);
+    
+    document.getElementById('btnC4Start').disabled = true;
+    document.getElementById('c4Target').disabled = true;
+    document.getElementById('c4Bet').disabled = true;
+    
+    document.getElementById('c4Status').innerHTML = 'your turn (red).';
+    document.getElementById('c4Status').className = 'game-status';
+    isC4Active = true;
+
+    // Reset logical array and visual board
+    c4GridState = Array.from({length: c4Rows}, () => Array(c4Cols).fill(0));
+    buildC4Board();
 }
 
 function c4DropToken(r, c, playerNum, callback) {
@@ -542,19 +540,18 @@ function c4DropToken(r, c, playerNum, callback) {
     token.style.transform = 'translateY(-400px)';
     cell.appendChild(token);
     
-    sfx.tick(1); // tick as it starts falling
+    sfx.tick(1);
     
     requestAnimationFrame(() => { requestAnimationFrame(() => { token.style.transform = 'translateY(0px)'; }); });
-    
     setTimeout(() => { sfx.thud(); if(callback) callback(); }, 600);
 }
 
 function c4PlayerMove(c) {
     if(!isC4Active) return;
-    let r = getLowestEmptyRow(c); if(r === -1) return; // Column full
+    let r = getLowestEmptyRow(c); if(r === -1) return;
     
-    isC4Active = false; // lock input during drop
-    c4Board[r][c] = 1;
+    isC4Active = false; 
+    c4GridState[r][c] = 1;
     
     c4DropToken(r, c, 1, () => {
         if(checkC4Win(1)) {
@@ -578,7 +575,7 @@ function c4BotMove() {
     // 1. Can bot win?
     for(let c=0; c<c4Cols; c++) {
         let r = getLowestEmptyRow(c); if(r === -1) continue;
-        c4Board[r][c] = 2; if(checkC4Win(2)) { bestCol = c; } c4Board[r][c] = 0;
+        c4GridState[r][c] = 2; if(checkC4Win(2)) { bestCol = c; } c4GridState[r][c] = 0;
         if(bestCol !== -1) break;
     }
     
@@ -586,7 +583,7 @@ function c4BotMove() {
     if(bestCol === -1) {
         for(let c=0; c<c4Cols; c++) {
             let r = getLowestEmptyRow(c); if(r === -1) continue;
-            c4Board[r][c] = 1; if(checkC4Win(1)) { bestCol = c; } c4Board[r][c] = 0;
+            c4GridState[r][c] = 1; if(checkC4Win(1)) { bestCol = c; } c4GridState[r][c] = 0;
             if(bestCol !== -1) break;
         }
     }
@@ -598,10 +595,10 @@ function c4BotMove() {
         if(validCols.length > 0) bestCol = validCols[Math.floor(Math.random() * validCols.length)];
     }
     
-    if(bestCol === -1) return; // shouldn't happen unless draw logic failed
+    if(bestCol === -1) return;
     
     let r = getLowestEmptyRow(bestCol);
-    c4Board[r][bestCol] = 2;
+    c4GridState[r][bestCol] = 2;
     
     c4DropToken(r, bestCol, 2, () => {
         if(checkC4Win(2)) {
@@ -615,26 +612,25 @@ function c4BotMove() {
 }
 
 function getLowestEmptyRow(c) {
-    for(let r = c4Rows - 1; r >= 0; r--) { if(c4Board[r][c] === 0) return r; }
+    for(let r = c4Rows - 1; r >= 0; r--) { if(c4GridState[r][c] === 0) return r; }
     return -1;
 }
 
 function isC4Draw() {
-    for(let c=0; c<c4Cols; c++) { if(c4Board[0][c] === 0) return false; }
+    for(let c=0; c<c4Cols; c++) { if(c4GridState[0][c] === 0) return false; }
     return true;
 }
 
 function checkC4Win(player) {
-    // Check horizontal, vertical, diag-down, diag-up
     const dirs = [[0,1], [1,0], [1,1], [1,-1]];
     for(let r=0; r<c4Rows; r++) {
         for(let c=0; c<c4Cols; c++) {
-            if(c4Board[r][c] !== player) continue;
+            if(c4GridState[r][c] !== player) continue;
             for(let [dr, dc] of dirs) {
                 let count = 1;
                 for(let i=1; i<c4Target; i++) {
                     let nr = r + dr*i, nc = c + dc*i;
-                    if(nr<0 || nr>=c4Rows || nc<0 || nc>=c4Cols || c4Board[nr][nc] !== player) break;
+                    if(nr<0 || nr>=c4Rows || nc<0 || nc>=c4Cols || c4GridState[nr][nc] !== player) break;
                     count++;
                 }
                 if(count >= c4Target) return true;
@@ -646,8 +642,7 @@ function checkC4Win(player) {
 
 function endC4() {
     isC4Active = false;
-    setTimeout(() => {
-        document.getElementById('c4Setup').style.display = 'block';
-        document.getElementById('c4Game').style.display = 'none';
-    }, 2500);
+    document.getElementById('btnC4Start').disabled = false;
+    document.getElementById('c4Target').disabled = false;
+    document.getElementById('c4Bet').disabled = false;
 }

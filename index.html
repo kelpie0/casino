@@ -168,28 +168,27 @@
 
     <div id="connect4" class="game-view">
         <h1>connect 4</h1>
-        <div id="c4Setup">
-            <p style="color:#888; margin-bottom: 30px;">connect 4: 2x | connect 5: 3x | connect 6: 5x</p>
-            <div class="bet-controls">
-                <span>goal:</span>
-                <select id="c4Target" class="bet-input" style="width: 100px;">
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                </select>
-                <span>bet:</span>
-                <input type="number" id="c4Bet" class="bet-input" value="10" min="1">
-                <button class="primary-btn" onclick="startC4()">start game</button>
-            </div>
+        <p style="color:#888; margin-bottom: 20px;">connect 4: 2x | connect 5: 3x | connect 6: 5x</p>
+        
+        <div class="c4-container">
+            <div class="c4-board" id="c4BoardUI">
+                </div>
         </div>
         
-        <div id="c4Game" style="display: none;">
-            <div class="c4-container">
-                <div class="c4-board" id="c4Board">
-                    </div>
-            </div>
+        <div class="bet-controls" id="c4Setup">
+            <span>goal:</span>
+            <select id="c4Target" class="bet-input" style="width: 100px;">
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+            </select>
+            <span>bet:</span>
+            <input type="number" id="c4Bet" class="bet-input" value="10" min="1">
+            <button class="primary-btn" id="btnC4Start" onclick="startC4()">start game</button>
         </div>
+        
         <div id="c4Status" class="game-status"></div>
     </div>
+
 </body>
 </html>
