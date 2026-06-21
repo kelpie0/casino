@@ -83,7 +83,7 @@ window.onclick = function(event) {
     }
 }
 
-// 1. SLOTS (requestAnimationFrame Audio Sync)
+// 1. SLOTS
 const slotSymbols = ['🍒','🍋','🍉','🍇','🔔','💎','7️⃣','🍀','🍎','💰','⭐','🎱'];
 function playSlots() {
     let bet = getBet('slotsBet'); if (!bet) return;
@@ -322,11 +322,9 @@ function startDerby() {
     rAnim = requestAnimationFrame(runR);
 }
 
-// 7. UNO (With Bot Names and Play Animations)
+// 7. UNO
 let unoDeck=[], unoPlayers=[], unoDiscard=null, unoColor='', unoDir=1, unoCurr=0, unoBetAmt=0, activeBotNames=[];
 const uCols=['red','blue','green','yellow'], uVals=['0','1','2','3','4','5','6','7','8','9','skip','rev','+2'];
-
-// Pool of 10 generic casual bot names
 const botNamesPool = ["ace", "lucky", "bluff", "dealer", "joker", "chips", "shadow", "rusty", "shark", "rookie"];
 
 function buildUnoDeck() {
@@ -350,38 +348,24 @@ function renderUnoCard(c, isValid=true, onClick='') {
     return `<div class="${cls}" data-val="${display}" onclick="${onClick}"><span>${display}</span></div>`;
 }
 
-// Animation system for the bot moves
 function animateBotCardPlay(card) {
     const container = document.getElementById('unoBotAnimContainer');
-    container.innerHTML = ''; // Clear previous animations
-    
-    // Create element with standard uno card styles
+    container.innerHTML = ''; 
     let animCard = document.createElement('div');
     let display = card.v === 'skip' ? '⊘' : (card.v === 'rev' ? '↺' : card.v);
     animCard.className = `uno-card ${card.c}`;
     animCard.setAttribute('data-val', display);
     animCard.innerHTML = `<span>${display}</span>`;
     
-    // Base inline styles for floating animation entry
-    animCard.style.position = 'absolute';
-    animCard.style.transform = 'translate(-50%, 40px) scale(0.4)';
-    animCard.style.opacity = '0';
-    animCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    
+    animCard.style.position = 'absolute'; animCard.style.transform = 'translate(-50%, 40px) scale(0.4)';
+    animCard.style.opacity = '0'; animCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     container.appendChild(animCard);
     
-    // Force DOM layout execution, then animate into place float up
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            animCard.style.transform = 'translate(-50%, 0px) scale(0.9)';
-            animCard.style.opacity = '1';
-        });
-    });
-
-    // Fade out and disappear shortly after
+    requestAnimationFrame(() => { requestAnimationFrame(() => {
+        animCard.style.transform = 'translate(-50%, 0px) scale(0.9)'; animCard.style.opacity = '1';
+    });});
     setTimeout(() => {
-        animCard.style.transform = 'translate(-50%, -40px) scale(0.6)';
-        animCard.style.opacity = '0';
+        animCard.style.transform = 'translate(-50%, -40px) scale(0.6)'; animCard.style.opacity = '0';
         setTimeout(() => { container.innerHTML = ''; }, 500);
     }, 1200);
 }
@@ -392,21 +376,17 @@ function startUno() {
     unoBetAmt = getBet('unoBet'); if(!unoBetAmt) return;
     updateBalance(-unoBetAmt);
     
-    // Pick unique names from pool for the number of bots chosen
     activeBotNames = botNamesPool.sort(() => Math.random() - 0.5).slice(0, bots);
-
     document.getElementById('unoSetup').style.display = 'none'; 
     document.getElementById('unoGame').style.display = 'block';
     document.getElementById('unoBotAnimContainer').innerHTML = '';
     
-    unoDeck = buildUnoDeck(); 
-    unoPlayers = Array.from({length: bots + 1}, () => []); 
+    unoDeck = buildUnoDeck(); unoPlayers = Array.from({length: bots + 1}, () => []); 
     for(let i=0; i<7; i++) unoPlayers.forEach(p => p.push(unoDeck.pop())); 
     do { unoDiscard = unoDeck.pop(); } while(unoDiscard.c === 'wild');
     unoColor = unoDiscard.c; unoDir = 1; unoCurr = 0;
     
-    sfx.cardDeal(); 
-    updateUnoUI("game started! your turn.");
+    sfx.cardDeal(); updateUnoUI("game started! your turn.");
 }
 
 function updateUnoUI(logText) {
@@ -457,23 +437,38 @@ function unoResolveWild(color) {
     processUnoEffect(unoDiscard, 0);
 }
 
+// -------------------------------------------------------------
+// BUG FIX: Removed 'skip' from +2 and +4, and added 2-player reverse logic
+// -------------------------------------------------------------
 function processUnoEffect(c, playerIdx) {
-    if(c.v === 'rev') unoDir *= -1;
-    if(c.v === 'skip') unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
+    let effectLog = "";
+    if(c.v === 'rev') { 
+        unoDir *= -1; 
+        if (unoPlayers.length === 2) { 
+            unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length; // Reverse acts as skip in 1v1
+            effectLog = " (reversed back to them)";
+        }
+    }
+    if(c.v === 'skip') {
+        unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
+        effectLog = " and skipped next player";
+    }
     if(c.v === '+2') {
         let t = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
         if(unoDeck.length < 2) unoDeck = buildUnoDeck();
-        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop()); unoCurr = t; 
+        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop()); 
+        effectLog = " and forced a draw 2"; // No longer skips the player who drew!
     }
     if(c.v === '+4') {
         let t = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
         if(unoDeck.length < 4) unoDeck = buildUnoDeck();
-        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop(), unoDeck.pop(), unoDeck.pop()); unoCurr = t; 
+        unoPlayers[t].push(unoDeck.pop(), unoDeck.pop(), unoDeck.pop(), unoDeck.pop()); 
+        effectLog = " and forced a draw 4"; // No longer skips the player who drew!
     }
-    checkUnoWin(playerIdx);
+    checkUnoWin(playerIdx, effectLog);
 }
 
-function checkUnoWin(playerIdx) {
+function checkUnoWin(playerIdx, effectLog = "") {
     let name = playerIdx === 0 ? "you" : (activeBotNames[playerIdx-1] || `bot ${playerIdx}`);
     if(unoPlayers[playerIdx].length === 0) {
         if(playerIdx === 0) {
@@ -485,14 +480,16 @@ function checkUnoWin(playerIdx) {
         document.getElementById('unoSetup').style.display = 'block'; document.getElementById('unoGame').style.display = 'none';
         return;
     }
-    unoNextTurn(playerIdx === 0 ? "you played a card." : `${name} played a card.`);
+    
+    let playString = playerIdx === 0 ? "you played a card" : `${name} played a card`;
+    unoNextTurn(`${playString}${effectLog}.`);
 }
 
 function unoNextTurn(logMsg) {
     unoCurr = (unoCurr + unoDir + unoPlayers.length) % unoPlayers.length;
     let nextName = unoCurr === 0 ? "your turn" : `${activeBotNames[unoCurr-1] || `bot ${unoCurr}`}'s turn`;
     updateUnoUI(`${logMsg} ${nextName}`);
-    if(unoCurr !== 0) setTimeout(unoBotPlay, 1600); // 1.6 sec delay to enjoy visual floating animation feed
+    if(unoCurr !== 0) setTimeout(unoBotPlay, 1600); 
 }
 
 function unoBotPlay() {
@@ -500,8 +497,6 @@ function unoBotPlay() {
     let name = activeBotNames[unoCurr-1] || `bot ${unoCurr}`;
     if(vIdx !== -1) {
         let c = hand[vIdx]; hand.splice(vIdx, 1); unoDiscard = c;
-        
-        // Trigger visual layout play notification animation element
         animateBotCardPlay(c);
         
         if(c.c === 'wild') {
@@ -509,6 +504,7 @@ function unoBotPlay() {
             hand.forEach(hc => { if(hc.c !== 'wild') counts[hc.c]++; });
             unoColor = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
         } else unoColor = c.c;
+        
         sfx.cardDeal(); processUnoEffect(c, unoCurr);
     } else {
         if(unoDeck.length === 0) unoDeck = buildUnoDeck();
