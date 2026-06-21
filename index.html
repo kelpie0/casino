@@ -145,21 +145,21 @@
                 <div id="unoBotsStatus" class="uno-bots-status"></div>
                 <div id="unoTurnIndicator" class="uno-turn-indicator">your turn</div>
             </div>
-           <div class="uno-center" style="position: relative;">
-    <div id="unoBotAnimContainer" style="position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 100;"></div>
-    
-    <div class="uno-deck-wrapper" onclick="unoDrawCard()">
-        <div class="uno-deck-stack">
-            <div class="uno-card-back"></div>
-            <div class="uno-card-back"></div>
-            <div class="uno-card-back"></div>
-        </div>
-        <span class="deck-label">draw</span>
-    </div>
+            <div class="uno-center" style="position: relative;">
+                <div id="unoBotAnimContainer" style="position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 100;"></div>
+                
+                <div class="uno-deck-wrapper" onclick="unoDrawCard()">
+                    <div class="uno-deck-stack">
+                        <div class="uno-card-back">uno</div>
+                        <div class="uno-card-back">uno</div>
+                        <div class="uno-card-back">uno</div>
+                    </div>
+                    <span class="deck-label">click to draw</span>
+                </div>
 
-        <div id="unoDiscardCard"></div>
-        <div class="uno-color-indicator" id="unoCurrentColor">color: red</div>
-    </div>  
+                <div id="unoDiscardCard"></div>
+                <div class="uno-color-indicator" id="unoCurrentColor">color: red</div>
+            </div>
             <p style="text-align: left; margin: 20px 0 10px 0; font-weight: bold;">your hand (auto-sorted):</p>
             <div class="uno-hand" id="unoPlayerHand"></div>
             <div class="uno-wild-picker" id="unoWildPicker" style="display: none;">
@@ -180,8 +180,7 @@
         <p style="color:#888; margin-bottom: 20px;">connect 4: 2x | connect 5: 3x | connect 6: 5x</p>
         
         <div class="c4-container">
-            <div class="c4-board" id="c4BoardUI">
-                </div>
+            <div class="c4-board" id="c4BoardUI"></div>
         </div>
         
         <div class="bet-controls" id="c4Setup">

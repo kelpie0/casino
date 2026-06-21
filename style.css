@@ -88,7 +88,7 @@ option { background: #111; color: #fff; }
 .lane { height: 60px; border-bottom: 1px solid #1a1a1a; position: relative; display: flex; align-items: center; overflow: hidden;}
 .horse-emoji { position: absolute; left: 0; font-size: 32px; cursor: help; transform: translateX(-50%); transition: left 0.1s linear; z-index: 2; }
 .horse-emoji:hover::after { content: attr(data-name); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-color); color: var(--bg-color); font-size: 12px; padding: 6px 10px; border-radius: 4px; white-space: nowrap; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-.lane-text { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; font-weight: 800; opacity: 0.15; white-space: nowrap; pointer-events: none; text-transform: uppercase; z-index: 1; }
+.lane-text { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; font-weight: 800; opacity: 0.15; white-space: nowrap; pointer-events: none; z-index: 1; text-transform: lowercase; }
 
 /* UNO */
 .uno-header { display: flex; justify-content: space-between; margin-bottom: 40px; align-items: center; flex-wrap: wrap; gap: 15px;}
@@ -102,7 +102,7 @@ option { background: #111; color: #fff; }
     width: 110px; height: 160px; border-radius: 12px; border: 5px solid #fff; 
     display: flex; align-items: center; justify-content: center; font-weight: 700; 
     font-size: 50px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); position: relative; 
-    overflow: hidden; text-transform: uppercase; color: #fff; text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    overflow: hidden; color: #fff; text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s, box-shadow 0.2s;
 }
 .uno-card::before { content: ''; position: absolute; width: 130%; height: 90%; background: rgba(255,255,255,0.15); border-radius: 50%; transform: rotate(-35deg); z-index: 0; box-shadow: inset 0 0 0 4px rgba(255,255,255,0.3); }
@@ -116,8 +116,6 @@ option { background: #111; color: #fff; }
 .uno-card.yellow::before { box-shadow: inset 0 0 0 4px rgba(0,0,0,0.1); background: rgba(255,255,255,0.4); }
 .uno-card.wild { background: #111; border-color: #888; }
 .uno-card.wild::before { background: conic-gradient(#dc2626 90deg, #2563eb 90deg 180deg, #16a34a 180deg 270deg, #eab308 270deg 360deg); opacity: 0.8; }
-.uno-deck { cursor: pointer; border-color: #555; }
-.uno-deck:hover { border-color: #fff; transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); }
 .uno-color-indicator { font-size: 18px; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); font-weight: 600; text-shadow: 1px 1px 0 #000; background: #111; }
 .uno-hand { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; padding: 20px 0; min-height: 200px; margin: 0 auto; max-width: 1000px;}
 .uno-hand-card { cursor: pointer; }
@@ -127,6 +125,28 @@ option { background: #111; color: #fff; }
 .uno-wild-picker { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 1px solid var(--border); padding: 40px; border-radius: 12px; z-index: 100; box-shadow: 0 20px 50px rgba(0,0,0,0.9); text-align: center; font-size: 24px; }
 .wild-btn { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #fff; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; }
 .wild-btn:hover { transform: scale(1.15); box-shadow: 0 0 20px rgba(255,255,255,0.5); }
+
+/* UNO DECK STACK & ANIMATION */
+.uno-deck-wrapper { position: relative; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: transform 0.2s; }
+.uno-deck-wrapper:hover { transform: translateY(-5px); }
+.uno-deck-stack { position: relative; width: 110px; height: 160px; }
+.uno-card-back {
+    position: absolute; top: 0; left: 0; width: 110px; height: 160px;
+    background: #111; border: 5px solid #fff; border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: bold; color: #dc2626; text-transform: uppercase;
+}
+.uno-deck-stack .uno-card-back:nth-child(2) { transform: rotate(3deg) translate(2px, 2px); z-index: -1; }
+.uno-deck-stack .uno-card-back:nth-child(3) { transform: rotate(-3deg) translate(-2px, 2px); z-index: -2; }
+.deck-label { font-size: 14px; font-weight: 700; color: #888; }
+.anim-draw-to-hand {
+    position: absolute; z-index: 1000; pointer-events: none;
+    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: #111; border: 5px solid #fff; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: bold; color: #dc2626; text-transform: uppercase;
+}
 
 /* CONNECT 4 */
 .c4-container { display: flex; justify-content: center; margin: 40px 0; }
@@ -157,26 +177,23 @@ option { background: #111; color: #fff; }
     h1 { font-size: 2rem; margin-bottom: 20px; }
     .game-view { padding: 30px 15px; }
     
-    /* Connect 4 Mobile */
     .c4-board { gap: 6px; padding: 10px; }
     .c4-col { gap: 6px; padding: 2px; }
     .c4-cell { width: 11vw; height: 11vw; max-width: 50px; max-height: 50px; }
     
-    /* Slots Mobile */
     .slots-container { gap: 10px; }
     .reel { width: 28vw; height: 150px; }
     .slot-sym { width: 28vw; height: 150px; font-size: 60px; }
     
-    /* Wheel Mobile */
     .wheel-container { width: 90vw; height: 90vw; margin: 30px auto; }
     
-    /* Cards Mobile */
     .playing-card { width: 80px; height: 110px; font-size: 30px; }
     .uno-card { width: 70px; height: 100px; font-size: 30px; border-width: 3px; }
+    .uno-card-back { width: 70px; height: 100px; font-size: 20px; border-width: 3px; }
+    .uno-deck-stack { width: 70px; height: 100px; }
     .uno-card::after { font-size: 14px; top: 4px; left: 6px; }
     .uno-center { gap: 20px; }
     
-    /* Global Elements Mobile */
     .crash-graph { height: 250px; }
     .bet-controls { flex-wrap: wrap; }
     .bet-input { width: 100px; }
