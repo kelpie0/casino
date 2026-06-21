@@ -1,7 +1,7 @@
 :root {
-    --bg-dark: #071a10;      /* Deep felt green */
-    --bg-darker: #030a06;    /* Almost black */
-    --gold: #fbbf24;         /* Rich gold */
+    --bg-dark: #071a10;      
+    --bg-darker: #030a06;    
+    --gold: #fbbf24;         
     --gold-dark: #b45309;
     --red-classic: #dc2626;
     --red-dark: #7f1d1d;
@@ -22,7 +22,7 @@ body {
 .font-mono { font-family: 'Fira Code', monospace; }
 .text-gold { color: var(--gold); }
 
-/* Header */
+/* Header & Menu */
 header {
     display: flex; justify-content: space-between; align-items: center;
     padding: 20px 40px; 
@@ -35,47 +35,44 @@ header {
 
 .logo { font-size: 26px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
 
+.header-right { display: flex; align-items: center; gap: 20px; }
+
 .balance-container {
     background: linear-gradient(145deg, #111, #000);
-    border: 1px solid var(--gold);
-    border-radius: 8px; padding: 10px 24px; font-size: 18px; font-weight: 700;
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.1); 
-    color: var(--gold);
-    transition: transform 0.2s;
+    border: 1px solid var(--gold); border-radius: 8px; padding: 10px 24px; 
+    font-size: 18px; font-weight: 700; box-shadow: 0 0 10px rgba(251, 191, 36, 0.1); 
+    color: var(--gold); transition: transform 0.2s;
 }
 
-/* Lobby */
-#lobby { padding: 60px 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+.menu-container { position: relative; }
+.hamburger-btn {
+    background: transparent; border: 1px solid var(--gold); color: var(--gold);
+    font-size: 24px; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    transition: all 0.2s;
+}
+.hamburger-btn:hover { background: rgba(251, 191, 36, 0.1); }
 
-.polished-card {
-    border-radius: 12px; 
-    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%);
-    border: 1px solid var(--border-subtle);
-    padding: 40px 20px; text-align: center; cursor: pointer; position: relative;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-    transition: transform 0.3s ease, border-color 0.4s ease, box-shadow 0.3s ease;
+.dropdown-menu {
+    position: absolute; top: 120%; right: 0;
+    background: #0a0a0c; border: 1px solid var(--gold); border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: flex; flex-direction: column; min-width: 200px;
+    opacity: 0; visibility: hidden; transform: translateY(-10px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1000;
 }
-.polished-card:hover { 
-    transform: translateY(-5px); 
-    border-color: var(--gold); 
-    box-shadow: 0 10px 30px rgba(251, 191, 36, 0.15); 
+.dropdown-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+.dropdown-menu a {
+    color: #fff; padding: 15px 20px; text-decoration: none; cursor: pointer;
+    border-bottom: 1px solid #222; transition: background 0.2s; font-weight: 600;
 }
-.polished-card h2 { margin-bottom: 10px; font-size: 22px; color: #fff; }
-.polished-card p { color: #aaa; font-size: 14px; }
+.dropdown-menu a:last-child { border-bottom: none; }
+.dropdown-menu a:hover { background: rgba(251, 191, 36, 0.1); color: var(--gold); }
 
 /* Game Containers */
 .game-view { display: none; padding: 40px; max-width: 800px; margin: 0 auto; text-align: center; }
 .active-view { display: block; animation: fadeIn 0.4s ease; }
-
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-.back-btn { 
-    background: transparent; border: 1px solid var(--border-subtle); color: var(--gold); 
-    padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-bottom: 30px; 
-    font-family: inherit; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
-    transition: all 0.2s;
-}
-.back-btn:hover { background: rgba(251, 191, 36, 0.1); border-color: var(--gold); }
 
 .bet-controls { display: flex; justify-content: center; gap: 15px; margin: 30px 0; align-items: center; }
 .bet-input { 
@@ -113,17 +110,21 @@ header {
 @keyframes spinReel { 0% { transform: translateY(-30px); } 100% { transform: translateY(30px); } }
 
 /* Wheel Styles */
-.wheel-container { position: relative; width: 300px; height: 300px; margin: 40px auto; }
+.wheel-container { position: relative; width: 400px; height: 400px; margin: 40px auto; }
 .wheel { 
     width: 100%; height: 100%; border-radius: 50%; border: 8px solid #222;
-    background: conic-gradient(
-        var(--red-classic) 0deg 45deg, #111 45deg 90deg, 
-        var(--red-classic) 90deg 135deg, #111 135deg 180deg, 
-        var(--red-classic) 180deg 225deg, #111 225deg 270deg, 
-        var(--red-classic) 270deg 315deg, var(--gold) 315deg 360deg
-    );
-    transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    /* Gradient applied via JS to support 20 segments */
     box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5);
+    position: relative; overflow: hidden;
+}
+/* Labels for wheel segments generated via JS */
+.wheel-label {
+    position: absolute; top: 50%; left: 50%;
+    width: 50%; height: 20px;
+    transform-origin: 0% 50%;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 15px; font-weight: 800; font-family: 'Fira Code', monospace;
+    font-size: 14px; color: #fff; text-shadow: 1px 1px 2px #000;
 }
 .wheel-pointer { 
     position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
@@ -137,7 +138,7 @@ header {
     width: 80px; height: 115px; background: #fff; border-radius: 6px; color: #000;
     display: flex; justify-content: center; align-items: center; font-size: 26px; font-weight: 800;
     box-shadow: -4px 4px 10px rgba(0,0,0,0.4); border: 1px solid #ccc;
-    animation: cardDeal 0.3s ease; margin: 0 5px;
+    animation: cardDeal 0.2s ease; margin: 0 5px; position: relative;
 }
 .card-red { color: var(--red-classic); }
 .card-black { color: #111; }
@@ -146,11 +147,17 @@ header {
 
 /* Crash Styles */
 .crash-graph {
-    background: #000; border: 2px solid var(--border-subtle); height: 250px; border-radius: 12px;
-    display: flex; justify-content: center; align-items: center; margin-bottom: 30px;
+    background: #000; border: 2px solid var(--border-subtle); height: 300px; border-radius: 12px;
     position: relative; overflow: hidden; box-shadow: inset 0 0 50px rgba(20,20,20,1);
+    margin-bottom: 30px;
 }
-.multiplier-text { font-size: 64px; font-weight: 800; color: var(--gold); z-index: 2; transition: color 0.2s; }
+#crashCanvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+}
+.multiplier-text { 
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 64px; font-weight: 800; color: var(--gold); z-index: 2; transition: color 0.2s; 
+}
 .crashing .multiplier-text { color: var(--red-classic); }
 
 /* Roulette Styles */
@@ -161,25 +168,13 @@ header {
     border: 6px solid var(--gold); background: #111; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     transition: all 0.3s ease; color: #fff;
 }
-.roulette-result.spinning {
-    animation: rouletteSpin 0.1s infinite;
-}
-@keyframes rouletteSpin {
-    0% { transform: scale(1); filter: blur(0px); }
-    50% { transform: scale(1.05); filter: blur(2px); }
-    100% { transform: scale(1); filter: blur(0px); }
-}
-.roulette-options {
-    display: flex; justify-content: center; gap: 15px; margin: 20px 0;
-}
-.r-label {
-    padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold;
-    border: 2px solid transparent; opacity: 0.6; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-}
+.roulette-result.spinning { animation: rouletteSpin 0.1s infinite; }
+@keyframes rouletteSpin { 0% { transform: scale(1); filter: blur(0px); } 50% { transform: scale(1.05); filter: blur(2px); } 100% { transform: scale(1); filter: blur(0px); } }
+.roulette-options { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
+.r-label { padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; border: 2px solid transparent; opacity: 0.6; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 .r-label:hover { opacity: 0.8; transform: translateY(-2px); }
 .r-label input:checked + span { font-weight: 800; }
 .r-label:has(input:checked) { opacity: 1; transform: scale(1.05); border-color: var(--gold); }
-
 .r-red { background: var(--red-classic); color: white; }
 .r-black { background: #111; color: white; border: 1px solid #333; }
 .r-green { background: #047857; color: white; }
