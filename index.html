@@ -11,6 +11,8 @@
 </head>
 <body>
 
+    <canvas id="confettiCanvas"></canvas>
+
     <header>
         <div class="logo">the casino.</div>
         <div class="header-right">
@@ -25,6 +27,7 @@
                     <a onclick="openGame('blackjack')">🃏 blackjack</a>
                     <a onclick="openGame('crash')">📈 crash</a>
                     <a onclick="openGame('roulette')">🔴 roulette</a>
+                    <a onclick="openGame('derby')">🐎 horse race</a>
                 </div>
             </div>
         </div>
@@ -99,7 +102,6 @@
     <div id="roulette" class="game-view">
         <h1>roulette</h1>
         <div class="roulette-result" id="rouletteResult">--</div>
-        
         <div class="roulette-options">
             <label class="r-label r-red">
                 <input type="radio" name="r_bet" value="red" checked> red (2x)
@@ -111,13 +113,35 @@
                 <input type="radio" name="r_bet" value="black"> black (2x)
             </label>
         </div>
-
         <div class="bet-controls">
             <span>bet:</span>
             <input type="number" id="rouletteBet" class="bet-input" value="10" min="1">
             <button class="primary-btn" id="btnRoulette" onclick="playRoulette()">spin</button>
         </div>
         <div id="rouletteStatus" class="game-status"></div>
+    </div>
+
+    <div id="derby" class="game-view">
+        <h1>horse race</h1>
+        <p style="color:#888; margin-bottom: 20px;">pick your horse. payout is 15x.</p>
+        
+        <div class="custom-dropdown-container">
+            <div class="custom-select" id="horseSelect" onclick="toggleHorseDropdown(event)">
+                <span id="selectedHorseText">select a horse...</span>
+            </div>
+            <div class="custom-options" id="horseOptions">
+                </div>
+        </div>
+
+        <div class="track" id="raceTrack">
+            </div>
+
+        <div class="bet-controls">
+            <span>bet:</span>
+            <input type="number" id="derbyBet" class="bet-input" value="10" min="1">
+            <button class="primary-btn" id="btnDerby" onclick="startDerby()">start race</button>
+        </div>
+        <div id="derbyStatus" class="game-status"></div>
     </div>
 
 </body>

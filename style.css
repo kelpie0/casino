@@ -11,7 +11,7 @@
     box-sizing: border-box; 
     margin: 0; 
     padding: 0; 
-    text-transform: lowercase; /* Forces all text to lowercase */
+    text-transform: lowercase; 
     font-family: 'Space Grotesk', sans-serif;
 }
 
@@ -20,6 +20,11 @@ body {
     color: var(--text-color);
     min-height: 100vh;
     overflow-x: hidden;
+}
+
+#confettiCanvas {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    pointer-events: none; z-index: 9999;
 }
 
 /* Header & Menu */
@@ -32,19 +37,13 @@ header {
 }
 
 .logo { font-size: 28px; font-weight: 600; letter-spacing: -1px; }
-
 .header-right { display: flex; align-items: center; gap: 30px; }
-
-.balance-container {
-    font-size: 18px; font-weight: 600;
-    transition: transform 0.2s, color 0.2s;
-}
+.balance-container { font-size: 18px; font-weight: 600; transition: transform 0.2s, color 0.2s; }
 
 .menu-container { position: relative; }
 .hamburger-btn {
     background: transparent; border: 1px solid var(--border); color: var(--text-color);
-    font-size: 16px; padding: 10px 20px; border-radius: 4px; cursor: pointer;
-    transition: all 0.2s;
+    font-size: 16px; padding: 10px 20px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
 }
 .hamburger-btn:hover { background: #1a1a1a; border-color: #666; }
 
@@ -99,8 +98,7 @@ h1 { font-size: 3rem; margin-bottom: 40px; font-weight: 400; letter-spacing: -1p
 .reel { 
     width: 200px; height: 240px; background: #111; border: 2px solid var(--border); 
     border-radius: 8px; display: flex; justify-content: center; align-items: center; 
-    font-size: 100px; /* Massive Emojis */
-    overflow: hidden; box-shadow: inset 0 10px 30px rgba(0,0,0,0.8);
+    font-size: 100px; overflow: hidden; box-shadow: inset 0 10px 30px rgba(0,0,0,0.8);
     transition: border-color 0.2s;
 }
 
@@ -163,3 +161,44 @@ h1 { font-size: 3rem; margin-bottom: 40px; font-weight: 400; letter-spacing: -1p
 .r-black { background: #1a1a1a; color: white; border: 1px solid #444; }
 .r-green { background: #059669; color: white; }
 .r-label input { display: none; }
+
+/* Horse Race Styles */
+.custom-dropdown-container { position: relative; width: 300px; margin: 0 auto 30px auto; text-align: left; }
+.custom-select {
+    background: #111; border: 1px solid var(--border); padding: 15px; border-radius: 4px;
+    cursor: pointer; font-size: 16px; display: flex; justify-content: space-between; align-items: center;
+}
+.custom-select::after { content: '▼'; font-size: 12px; }
+.custom-options {
+    position: absolute; top: 100%; left: 0; width: 100%; background: #111; border: 1px solid var(--border);
+    border-top: none; max-height: 250px; overflow-y: auto; display: none; z-index: 50;
+    border-radius: 0 0 4px 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+.custom-options.show { display: block; }
+.custom-option {
+    padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 10px;
+}
+.custom-option:hover { background: #1a1a1a; }
+.horse-preview { font-size: 18px; }
+
+.track {
+    border-left: 2px solid var(--border);
+    border-right: 4px dashed var(--text-color);
+    background: #0a0a0c; padding: 10px 0; margin: 40px auto; max-width: 1000px;
+    position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+}
+.lane {
+    height: 36px; border-bottom: 1px solid #1a1a1a;
+    position: relative; display: flex; align-items: center;
+}
+.horse-emoji {
+    position: absolute; left: 0; font-size: 22px; cursor: help;
+    transition: left 0.1s linear; transform: translateX(-50%); /* Centers emoji on the line */
+}
+/* Tooltip logic for horse hover */
+.horse-emoji:hover::after {
+    content: attr(data-name);
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    background: var(--text-color); color: var(--bg-color); font-size: 12px;
+    padding: 4px 8px; border-radius: 4px; white-space: nowrap; z-index: 100;
+}
