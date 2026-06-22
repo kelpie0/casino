@@ -314,7 +314,7 @@ const horses = [
     {id:0,name:"bullet'n board",hex:"#dc2626"},{id:1,name:"lightning strikes thrice",hex:"#facc15"},{id:2,name:"superstitional realism",hex:"#22c55e"},{id:3,name:"door knob",hex:"#3b82f6"},
     {id:4,name:"jovial merryment",hex:"#f97316"},{id:5,name:"downtown skybox",hex:"#a855f7"},{id:6,name:"cyan",hex:"#06b6d4"},{id:7,name:"resolute mind afternoon",hex:"#ec4899"},
     {id:8,name:"comely material morning",hex:"#84cc16"},{id:9,name:"a mysterious figure",hex:"#333333"},{id:10,name:"garbage bin",hex:"#78350f"},{id:11,name:"nighttime knifemare",hex:"#1e3a8a"},
-    {id:12,name:"00b",hex:"#ffffff"},{id:13,name:"00e",hex:"#6b7280"},{id:14,name:"006",hex:"#d946ef"},{id:15,name:"009",hex:"#14b8a6"}
+    {id:12,name:"meisho doto",hex:"#f793de"},{id:13,name:"00e",hex:"#6b7280"},{id:14,name:"cheesy michael",hex:"#ffbf71"},{id:15,name:"spammiej",hex:"#60b54e"}
 ];
 let selHorseId = null, isRacing = false;
 const hOpts = document.getElementById('horseOptions');
@@ -465,8 +465,36 @@ function unoPlayerPlay(idx) {
     unoColor = c.c; processUnoEffect(c, 0);
 }
 
+function triggerDrawAnimation() {
+    const deckStack = document.querySelector('.uno-deck-stack');
+    if (!deckStack) return;
+    
+    const deckRect = deckStack.getBoundingClientRect();
+    const handArea = document.getElementById('unoPlayerHand').getBoundingClientRect();
+    
+    // Create floating card styled exactly like the back of the deck stack
+    const ghostCard = document.createElement('div');
+    ghostCard.className = 'anim-draw-to-hand';
+    ghostCard.innerText = 'uno';
+    ghostCard.style.left = deckRect.left + 'px';
+    ghostCard.style.top = deckRect.top + 'px';
+    document.body.appendChild(ghostCard);
+    
+    // Animate to hand area
+    requestAnimationFrame(() => {
+        ghostCard.style.left = handArea.left + 'px';
+        ghostCard.style.top = (handArea.top + 20) + 'px';
+        ghostCard.style.transform = 'scale(0.5)';
+        ghostCard.style.opacity = '0';
+    });
+    
+    // Cleanup
+    setTimeout(() => ghostCard.remove(), 600);
+}
+
 function unoDrawCard() {
     if(unoCurr !== 0) return;
+    triggerDrawAnimation();
     if(unoDeck.length === 0) unoDeck = buildUnoDeck();
     unoPlayers[0].push(unoDeck.pop()); sfx.cardDeal();
     unoNextTurn("you drew a card.");
